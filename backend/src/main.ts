@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module.js';
 import { apiBasePath, configureApp } from './bootstrap.js';
+import { SenamiExpressAdapter } from './core/http/senami-express.adapter.js';
 import {
   type AppConfig,
   SWAGGER_PATH,
@@ -12,9 +13,11 @@ import {
 
 /** Process concerns only: logger, proxy, shutdown, Swagger, listen. */
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    bufferLogs: true,
-  });
+  const app = await NestFactory.create<NestExpressApplication>(
+    AppModule,
+    new SenamiExpressAdapter(),
+    { bufferLogs: true },
+  );
   const config = app.get<AppConfig>(appConfig.KEY);
 
   app.useLogger(config.logLevels);

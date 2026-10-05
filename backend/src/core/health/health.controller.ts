@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
 import { sql } from 'drizzle-orm';
+import { RawResponse } from '@shared/decorators/raw-response.decorator.js';
 import { DRIZZLE, type Database } from '@core/database/index.js';
 
 const DATABASE_TIMEOUT_MS = 1_500;
@@ -15,6 +16,7 @@ const DATABASE_TIMEOUT_MS = 1_500;
  * `live`: restart the process if it fails. `ready`: take it out of the load
  * balancer. Conflating them turns a database outage into a restart loop.
  */
+@RawResponse()
 @ApiExcludeController()
 @Controller({ path: 'health', version: VERSION_NEUTRAL })
 export class HealthController {

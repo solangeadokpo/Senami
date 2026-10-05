@@ -6,6 +6,7 @@ import {
   asSuperAdmin,
   withTenant,
 } from '@core/database/index.js';
+import { PostgresErrorMapper } from '@core/database/postgres-error.mapper.js';
 import { establishments, students } from '@database/schema/index.js';
 import { createTestApp } from './app.js';
 
@@ -90,6 +91,23 @@ describe('tenant isolation (row level security)', () => {
       .where(eq(students.establishmentId, schoolA));
 
     expect(rows).toEqual([]);
+  });
+
+  it('reports a write refused by row level security as FORBIDDEN', async () => {
+    const refusal: unknown = await withTenant(db, schoolB, (tx) =>
+      tx.insert(students).values({
+        establishmentId: schoolA,
+        lastName: 'Intrus',
+        firstName: 'X',
+        classGroup: 'CM1',
+      }),
+    ).catch((error: unknown) => error);
+
+    expect(new PostgresErrorMapper().map(refusal)).toMatchObject({
+      status: 403,
+      code: 'FORBIDDEN',
+      securityAlert: true,
+    });
   });
 
   it("rejects a write into another establishment's data", async () => {
