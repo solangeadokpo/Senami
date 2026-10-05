@@ -92,18 +92,109 @@ src/modules/students/
 - Schema changes go through migrations, never `drizzle-kit push`. See
   [`database.md`](database.md#changing-the-schema).
 
+## Responses
+
+Controllers return the value; they never build a response.
+`ResponseInterceptor` wraps it. This is the contract with the web and mobile
+clients.
+
+| Controller returns                                                    | Response                                                                                      |
+| --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| a value                                                               | `{ "data": <value> }` (201 for a `@Post`)                                                     |
+| a `PaginatedResult` (`PaginatedResult.of(items, total, page, limit)`) | `{ "data": [...], "meta": { page, limit, total, totalPages, hasNextPage, hasPreviousPage } }` |
+| nothing, with `@HttpCode(204)`                                        | 204, no body                                                                                  |
+| a `StreamableFile`                                                    | the file, no envelope                                                                         |
+| anything, with `@RawResponse()`                                       | as is: health probes, provider webhooks only                                                  |
+
+- `@Serialize(ResponseDto)` on every endpoint returning data: only fields
+  marked `@Expose()` leave the server. Never return a database row as is.
+- List endpoints take a query DTO extending `PaginationQueryDto` (`page`,
+  `limit`, at most 100).
+- Document with `@ApiDataResponse(Dto)`, `@ApiPaginatedResponse(Dto)` and
+  `@ApiErrorResponses(...statuses)`.
+
 ## Errors
 
-- Services throw a `DomainError` subclass (`NotFoundError`, `ConflictError`,
-  `InvariantViolationError`, `ForbiddenActionError`) with a stable
-  SCREAMING_SNAKE_CASE `code`. A single global exception filter maps each
-  family to an HTTP status. Services never throw HTTP exceptions.
-- `details` may be returned to the client; `context` is logged only. Anything
-  sensitive goes in `context`.
+### Throwing
+
+- Services throw a `DomainError` subclass, never an HTTP exception. Each
+  module declares its errors in `<module>.errors.ts`, extending one family:
+
+  | Family                 | Status | Example code                 |
+  | ---------------------- | ------ | ---------------------------- |
+  | `AuthenticationError`  | 401    | `SESSION_REVOKED`            |
+  | `ForbiddenActionError` | 403    | `SUBSCRIPTION_SUSPENDED`     |
+  | `NotFoundError`        | 404    | `STUDENT_NOT_FOUND`          |
+  | `ConflictError`        | 409    | `USER_EMAIL_ALREADY_USED`    |
+  | `BusinessRuleError`    | 422    | `NO_PRIMARY_RECIPIENT`       |
+  | `UnavailableError`     | 503    | `EMAIL_PROVIDER_UNAVAILABLE` |
+
+  ```ts
+  export class StudentNotFoundError extends NotFoundError {
+    readonly code = 'STUDENT_NOT_FOUND';
+    constructor(studentId: string) {
+      super('Student not found', { details: { studentId } });
+    }
+  }
+  ```
+
+- 400 means a malformed request (the DTO, the JSON); 422 means a well-formed
+  request a business rule refuses.
+- `message` is in English, for developers. `details` holds parameters the
+  client uses to build its own (translated) message. `context` is logged
+  only: anything sensitive goes there, never in `message` or `details`.
+- An expected database conflict (an email already used) is translated by the
+  repository into a domain error. The generic `UNIQUE_VIOLATION`,
+  `REFERENCE_VIOLATION`, `CONSTRAINT_VIOLATION` codes are a safety net.
+
+### Error body
+
+Every error, whatever its origin, has this shape:
+
+```json
+{
+  "error": {
+    "status": 400,
+    "code": "VALIDATION_FAILED",
+    "message": "Request validation failed",
+    "details": { "...": "..." },
+    "fields": [
+      { "field": "postalCode", "constraint": "matches", "message": "..." }
+    ],
+    "requestId": "b1c9...",
+    "timestamp": "2026-10-06T09:12:03.000Z",
+    "path": "/api/v1/students"
+  }
+}
+```
+
+`code` is always present and is what clients branch on. Generic codes:
+`VALIDATION_FAILED`, `MALFORMED_JSON`, `BAD_REQUEST`, `UNAUTHENTICATED`,
+`FORBIDDEN`, `ROUTE_NOT_FOUND`, `METHOD_NOT_ALLOWED`, `PAYLOAD_TOO_LARGE`,
+`RATE_LIMITED`, `UNIQUE_VIOLATION`, `REFERENCE_VIOLATION`,
+`CONSTRAINT_VIOLATION`, `SERVICE_UNAVAILABLE`, `HTTP_ERROR`,
+`INTERNAL_ERROR` (`src/shared/errors/error-codes.ts`).
+
+### How it works
+
+`AllExceptionsFilter` is the single exit for errors. It asks an ordered list
+of mappers (`ERROR_MAPPERS`, in `app.module.ts`) to translate the exception;
+the first that recognises it wins, else 500 `INTERNAL_ERROR`. To support a new
+kind of error (a payment provider SDK), add a mapper, do not touch the filter.
+
+Every request carries an `X-Request-Id` (kept from the client when safe,
+generated otherwise), echoed in the response and in the error body, and on
+every log line. 4xx are logged at `warn`, 5xx and security alerts at `error`
+with the stack. Logs never contain a request body or a query string.
+
+### Catching
+
 - Never `try/catch` to swallow an error. Catch the narrowest thing, and pass
   the original as `cause`. Do not catch just to log and rethrow: the filter
   logs.
 - A caught value is `unknown`: narrow it, never cast it.
+- The filter only sees HTTP requests. Scheduled jobs and background tasks
+  catch and log their own errors; a promise is never left unhandled.
 
 ## API
 
@@ -111,15 +202,13 @@ src/modules/students/
   versioning.
 - Every input is a DTO validated by `class-validator`. The global
   `ValidationPipe` uses `whitelist` and `forbidNonWhitelisted`: an unknown
-  field is a 400, not silently dropped.
-- Responses go through a response DTO that exposes an allow-list of fields.
-  Never return a database row as is.
+  field is a 400 `VALIDATION_FAILED`, not silently dropped.
 - Four DTO shapes per resource: `create-`, `update-`, `list-<r>-query-`,
   `<r>-response-`.
 - Every endpoint is protected by a guard unless explicitly public, and checks
   the role (intervenant, responsable, super admin) it requires.
-- Cross-cutting concerns (logging, timeouts, response envelope) are
-  interceptors, not code repeated in controllers.
+- Cross-cutting concerns are interceptors, filters or middleware, not code
+  repeated in controllers.
 
 ## Security and personal data
 
@@ -159,7 +248,38 @@ src/modules/students/
 - `noUncheckedIndexedAccess`: `array[0]` is `T | undefined`; destructure and
   test.
 - `import type` for type-only imports (enforced by ESLint).
-- Native ESM: relative imports end in `.js`. No path aliases.
+
+## Imports
+
+The project is native ESM (`"type": "module"`). All the code is TypeScript;
+an import names the **compiled** file, so it ends in `.js`. Node requires the
+exact file at runtime and TypeScript does not rewrite paths.
+
+- **Aliases** for anything outside the current folder, never `../` (ESLint
+  rejects it):
+
+  | Alias         | Folder                                                     |
+  | ------------- | ---------------------------------------------------------- |
+  | `@config/*`   | `src/config/`                                              |
+  | `@core/*`     | `src/core/`                                                |
+  | `@shared/*`   | `src/shared/`                                              |
+  | `@modules/*`  | `src/modules/`                                             |
+  | `@database/*` | `src/database/`                                            |
+  | `@src/*`      | `src/` (root files: `app.module`, `bootstrap`; tests only) |
+
+  ```ts
+  import { env } from '@config/env.validation.js';
+  import { NotFoundError } from '@shared/errors/domain.error.js';
+  import { StudentsService } from './students.service.js';
+  ```
+
+- `./` stays for a file of the same folder or below.
+- Import the narrowest path: `@shared/errors/domain.error.js` rather than the
+  `@shared/index.js` barrel, which pulls more than a single file needs.
+- Aliases are declared once, in `tsconfig.json` (`paths`). `nest build`
+  rewrites them into relative paths in `dist/`; Vitest resolves them through
+  `vite-tsconfig-paths`. A new top-level folder under `src/` gets its alias
+  there, and in the ESLint message of `no-restricted-imports`.
 
 ## Testing
 

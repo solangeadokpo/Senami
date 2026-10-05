@@ -31,6 +31,19 @@ export default tseslint.config(
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
+      // Outside the current folder, import through an alias (@shared/...).
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '^\\.\\./',
+              message:
+                'Use an alias (@config, @core, @shared, @modules, @database, @src) instead of ../',
+            },
+          ],
+        },
+      ],
       // Casing rules of docs/conventions.md#naming. The most specific
       // selector wins, whatever the order.
       '@typescript-eslint/naming-convention': [
