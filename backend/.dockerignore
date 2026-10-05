@@ -1,0 +1,24 @@
+# Only what the Dockerfile copies matters; everything else stays out of the
+# build context (smaller, faster, no secret leaks).
+node_modules
+dist
+coverage
+*.tsbuildinfo
+
+.env
+.env.*
+!.env.example
+
+.git
+.husky
+.claude
+AGENTS.md
+CLAUDE.md
+
+docs
+test
+docker
+docker-compose*.yml
+Dockerfile
+.dockerignore
+*.md

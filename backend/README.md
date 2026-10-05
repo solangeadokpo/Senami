@@ -33,6 +33,39 @@ The Docker database creates two databases owned by `senami_app`: `senami` for
 development and `senami_test` for the e2e suite. The role is not a superuser
 on purpose, so row level security applies locally as it does in production.
 
+## Docker
+
+The [`Dockerfile`](Dockerfile) builds the production image in four stages
+(base, build, production dependencies, runtime). The runtime image holds the
+compiled code, the production dependencies and the migrations only; it runs
+as the unprivileged `node` user behind `tini`, with a health check on
+`/health/live`.
+
+```bash
+pnpm docker:up       # PostgreSQL, migrations, then the API on localhost:3000
+pnpm docker:logs
+pnpm docker:down
+```
+
+The compose stack has three services:
+
+| Service    | Role                                                                |
+| ---------- | ------------------------------------------------------------------- |
+| `postgres` | PostgreSQL 16, port 5433 on the host                                |
+| `migrate`  | one-off: applies pending migrations, then exits                     |
+| `api`      | the API, started once `migrate` has succeeded; read-only filesystem |
+
+The API runs with `NODE_ENV=production` in the stack, so the OpenAPI
+documentation is off: use `pnpm start:dev` for day-to-day work. Change the
+host port with `API_PORT=3100 pnpm docker:up`.
+
+In any other environment, run the migrations before starting a new version
+of the API, with the same image:
+
+```bash
+docker run --rm -e DATABASE_URL=... senami-api node dist/database/migrate.js
+```
+
 ## Scripts
 
 | Script                           | What it does                                     |

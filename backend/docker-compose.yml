@@ -1,5 +1,25 @@
-# Local PostgreSQL for development and the e2e suite (`pnpm db:up`).
-# Port 5433 on the host, so it does not collide with a native instance.
+# Local stack: PostgreSQL, the migrations, the API.
+#
+#   pnpm db:up        PostgreSQL only, for `pnpm start:dev` and the e2e suite
+#   pnpm docker:up    the whole stack, API built from the Dockerfile
+#
+# Host ports are bound to 127.0.0.1. PostgreSQL uses 5433 so it does not
+# collide with a native instance.
+
+x-api-image: &api-image
+  image: senami-api:local
+  build:
+    context: .
+    target: runtime
+  # Hardening: nothing to write, no privilege to gain.
+  read_only: true
+  tmpfs:
+    - /tmp
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -18,6 +38,34 @@ services:
       interval: 2s
       timeout: 3s
       retries: 15
+
+  # One-off: applies pending migrations, then exits. The API waits for it.
+  migrate:
+    <<: *api-image
+    container_name: senami-migrate
+    command: ['node', '--enable-source-maps', 'dist/database/migrate.js']
+    environment:
+      DATABASE_URL: postgres://senami_app:senami_app@postgres:5432/senami
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: 'no'
+
+  api:
+    <<: *api-image
+    container_name: senami-api
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      LOG_LEVEL: log
+      CORS_ORIGINS: http://localhost:3001
+      DATABASE_URL: postgres://senami_app:senami_app@postgres:5432/senami
+    ports:
+      - '127.0.0.1:${API_PORT:-3000}:3000'
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
 
 volumes:
   senami-pgdata:
