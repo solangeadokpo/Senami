@@ -1,0 +1,431 @@
+@startuml database
+' =============================================================================
+' Senami: data model (PostgreSQL)
+' Source of truth: src/database/schema/ (Drizzle) and drizzle/ migrations
+' Legend: * = NOT NULL, <<PK>> primary key, <<FK>> foreign key,
+'         <<UK>> unique, <<gen>> generated column
+' Solid lines: foreign keys. Dotted lines: logical link, no foreign key
+' =============================================================================
+
+!theme plain
+hide circle
+skinparam linetype ortho
+skinparam shadowing false
+skinparam defaultFontName "Helvetica"
+skinparam nodesep 60
+skinparam ranksep 70
+skinparam package {
+  BorderColor #888888
+  FontColor #444444
+}
+skinparam class {
+  BorderColor #2E7D5B
+  HeaderBackgroundColor #E6F4EC
+  BackgroundColor #FFFFFF
+  ArrowColor #555555
+}
+
+title Senami - Database schema
+
+' -----------------------------------------------------------------------------
+package "Establishments and accounts" {
+
+  entity "establishments" as establishments {
+    * id : uuid <<PK>>
+    --
+    * name : text
+    * type : establishment_type
+    * address_line : text
+    * postal_code : varchar(5)
+    * city : text
+      phone : text
+      email : citext
+      approx_student_count : integer
+      logo : bytea
+      logo_mime_type : text
+    * status : establishment_status
+      suspended_at : timestamptz
+      suspension_reason : text
+      terminated_at : timestamptz
+    * is_demo : boolean
+    * created_at : timestamptz
+    * updated_at : timestamptz
+  }
+
+  entity "users" as users {
+    * id : uuid <<PK>>
+    --
+      establishment_id : uuid <<FK>> (NULL for super admin)
+    * role : user_role
+    * email : citext <<UK>>
+    * first_name : text
+    * last_name : text
+      job_title : text
+      password_hash : text
+    * status : user_status
+      totp_secret_encrypted : bytea
+      totp_enrolled_at : timestamptz
+    * totp_failed_attempts : smallint
+      totp_locked_until : timestamptz
+      last_login_at : timestamptz
+      deactivated_at : timestamptz
+      created_by : uuid <<FK>>
+    * created_at : timestamptz
+    * updated_at : timestamptz
+  }
+
+  entity "user_invitations" as user_invitations {
+    * id : uuid <<PK>>
+    --
+    * user_id : uuid <<FK>>
+    * token_hash : bytea <<UK>>
+      invited_by : uuid <<FK>>
+    * expires_at : timestamptz
+      accepted_at : timestamptz
+      revoked_at : timestamptz
+    * created_at : timestamptz
+  }
+
+  entity "password_reset_tokens" as password_reset_tokens {
+    * id : uuid <<PK>>
+    --
+    * user_id : uuid <<FK>>
+    * token_hash : bytea <<UK>>
+    * expires_at : timestamptz
+      used_at : timestamptz
+    * created_at : timestamptz
+  }
+
+  entity "auth_sessions" as auth_sessions {
+    * id : uuid <<PK>>
+    --
+    * user_id : uuid <<FK>>
+    * channel : session_channel
+    * refresh_token_hash : bytea <<UK>>
+      device_id : text
+      device_name : text
+      platform : text
+      app_version : text
+    * created_at : timestamptz
+    * last_used_at : timestamptz
+    * expires_at : timestamptz
+      revoked_at : timestamptz
+      revoked_by : uuid <<FK>>
+      revocation_reason : text
+  }
+
+  entity "totp_recovery_codes" as totp_recovery_codes {
+    * id : uuid <<PK>>
+    --
+    * user_id : uuid <<FK>>
+    * code_hash : text
+      used_at : timestamptz
+    * created_at : timestamptz
+  }
+}
+
+' -----------------------------------------------------------------------------
+package "Establishment space" {
+
+  entity "sheet_recipients" as sheet_recipients {
+    * id : uuid <<PK>>
+    --
+    * establishment_id : uuid <<FK>>
+    * recipient_type : recipient_type
+    * email : citext
+      label : text
+    * created_at : timestamptz
+    * updated_at : timestamptz
+    ..
+    UK (establishment_id, email)
+  }
+
+  entity "useful_contacts" as useful_contacts {
+    * id : uuid <<PK>>
+    --
+    * establishment_id : uuid <<FK>>
+    * category : contact_category
+    * label : text
+    * phone : text
+    * sort_order : smallint
+    * created_at : timestamptz
+    * updated_at : timestamptz
+  }
+
+  entity "students" as students {
+    * id : uuid <<PK>>
+    --
+    * establishment_id : uuid <<FK>>
+    * last_name : text
+    * first_name : text
+    * class_group : text
+      internal_id : text
+      archived_at : timestamptz
+    * created_at : timestamptz
+    * updated_at : timestamptz
+    ..
+    UK (establishment_id, internal_id)
+  }
+}
+
+' -----------------------------------------------------------------------------
+package "Declarations (no sheet content)" {
+
+  entity "declaration_submissions" as declaration_submissions {
+    * idempotency_key : uuid <<PK>>
+    --
+    * establishment_id : uuid <<FK>>
+    * dossier_year : smallint
+    * dossier_seq : integer
+    * dossier_number : text <<gen>>
+    * status : submission_status
+    * received_at : timestamptz
+      sent_at : timestamptz
+    * event_type_code : text
+    * location_code : text
+    * event_hour : smallint
+    ..
+    UK (establishment_id, dossier_year, dossier_seq)
+  }
+
+  entity "reference_values" as reference_values {
+    * id : integer <<PK>>
+    --
+    * list : reference_list
+    * code : text
+    * label : text
+    * sort_order : smallint
+    * requires_precision : boolean
+    * is_active : boolean
+    * updated_at : timestamptz
+    ..
+    UK (list, code)
+  }
+}
+
+' -----------------------------------------------------------------------------
+package "Subscriptions and payments" {
+
+  entity "subscription_plans" as subscription_plans {
+    * id : uuid <<PK>>
+    --
+    * code : text <<UK>>
+    * name : text
+    * billing_interval : text
+    * interval_count : smallint
+    * is_active : boolean
+    * created_at : timestamptz
+  }
+
+  entity "subscription_plan_prices" as subscription_plan_prices {
+    * id : uuid <<PK>>
+    --
+    * plan_id : uuid <<FK>>
+    * amount_cents : integer
+    * currency : char(3)
+    * valid_from : timestamptz
+      provider_price_id : text <<UK>>
+    * created_at : timestamptz
+    ..
+    UK (plan_id, valid_from)
+  }
+
+  entity "subscriptions" as subscriptions {
+    * id : uuid <<PK>>
+    --
+    * establishment_id : uuid <<FK>>
+    * plan_id : uuid <<FK>>
+    * plan_price_id : uuid <<FK>>
+    * status : subscription_status
+      started_at : timestamptz
+      current_period_start : timestamptz
+      current_period_end : timestamptz
+    * cancel_at_period_end : boolean
+      payment_provider : text
+      provider_customer_id : text
+      provider_subscription_id : text
+    * dunning_attempts : smallint
+      last_dunning_at : timestamptz
+      suspended_at : timestamptz
+      suspension_reason : text
+      cancelled_at : timestamptz
+    * created_at : timestamptz
+    * updated_at : timestamptz
+    ..
+    one non-cancelled subscription per establishment
+  }
+
+  entity "payments" as payments {
+    * id : uuid <<PK>>
+    --
+    * subscription_id : uuid <<FK>>
+    * establishment_id : uuid <<FK>>
+    * payment_provider : text
+    * provider_payment_id : text
+    * amount_cents : integer
+    * currency : char(3)
+    * status : payment_status
+      period_start : timestamptz
+      period_end : timestamptz
+      paid_at : timestamptz
+      failed_at : timestamptz
+      failure_reason : text
+      refunded_at : timestamptz
+      refunded_amount_cents : integer
+      receipt_number : text <<UK>>
+      receipt_url : text
+      receipt_sent_at : timestamptz
+    * created_at : timestamptz
+    * updated_at : timestamptz
+    ..
+    UK (payment_provider, provider_payment_id)
+  }
+
+  entity "payment_webhook_events" as payment_webhook_events {
+    * id : uuid <<PK>>
+    --
+    * payment_provider : text
+    * provider_event_id : text
+    * event_type : text
+    * payload : jsonb
+    * received_at : timestamptz
+      processed_at : timestamptz
+      processing_error : text
+    ..
+    UK (payment_provider, provider_event_id)
+  }
+}
+
+' -----------------------------------------------------------------------------
+package "Showcase site and registrations" {
+
+  entity "registration_requests" as registration_requests {
+    * id : uuid <<PK>>
+    --
+    * establishment_name : text
+    * establishment_type : establishment_type
+    * address_line : text
+    * postal_code : varchar(5)
+    * city : text
+      approx_student_count : integer
+    * manager_last_name : text
+    * manager_first_name : text
+    * manager_job_title : text
+    * manager_email : citext
+    * manager_phone : text
+    * status : registration_status
+      rejection_reason : text
+    * privacy_consent_at : timestamptz
+    * privacy_policy_version : text
+      establishment_id : uuid <<FK, UK>>
+      assigned_to : uuid <<FK>>
+    * created_at : timestamptz
+    * updated_at : timestamptz
+  }
+
+  entity "registration_request_events" as registration_request_events <<append-only>> {
+    * id : bigint <<PK>>
+    --
+    * request_id : uuid <<FK>>
+      actor_user_id : uuid
+    * actor_kind : text
+      from_status : registration_status
+    * to_status : registration_status
+      comment : text
+    * created_at : timestamptz
+  }
+
+  entity "demo_requests" as demo_requests {
+    * id : uuid <<PK>>
+    --
+    * full_name : text
+      job_title : text
+    * establishment_name : text
+    * city : text
+    * email : citext
+      phone : text
+      preferred_slot : text
+      message : text
+    * status : demo_status
+      internal_notes : text
+    * privacy_consent_at : timestamptz
+    * privacy_policy_version : text
+      handled_by : uuid <<FK>>
+    * created_at : timestamptz
+    * updated_at : timestamptz
+  }
+}
+
+' -----------------------------------------------------------------------------
+package "Audit" {
+
+  entity "audit_logs" as audit_logs <<append-only>> {
+    * id : bigint <<PK>>
+    --
+    * occurred_at : timestamptz
+      actor_user_id : uuid
+      actor_role : user_role
+      establishment_id : uuid
+    * action : text
+      target_type : text
+      target_id : text
+    * details : jsonb
+      ip_address : inet
+      user_agent : text
+  }
+}
+
+' -----------------------------------------------------------------------------
+' Enumerated types
+' -----------------------------------------------------------------------------
+legend right
+  <b>Enumerated types</b>
+  establishment_type : maternelle | primaire | college | lycee | groupe_scolaire
+  establishment_status : active | suspended | terminated
+  user_role : intervenant | responsable | super_admin
+  user_status : invited | active | deactivated
+  session_channel : mobile | backoffice
+  recipient_type : to | cc | bcc
+  contact_category : direction | emergency | samu | other
+  submission_status : numbered | sent
+  subscription_status : pending_payment | active | past_due | suspended | cancelled
+  payment_status : pending | succeeded | failed | refunded
+  registration_status : received | under_review | info_requested | validated | activated | rejected
+  demo_status : new | contacted | done | dropped
+  reference_list : location | event_type | bodily_damage | body_part | laterality | observed_sign | checked_risk
+endlegend
+
+' -----------------------------------------------------------------------------
+' Relations (foreign keys)
+' -----------------------------------------------------------------------------
+establishments |o--o{ users : "employs"
+users |o--o{ users : "created_by"
+
+users ||--o{ user_invitations
+users ||--o{ password_reset_tokens
+users ||--o{ auth_sessions
+users ||--o{ totp_recovery_codes
+
+establishments ||--o{ sheet_recipients
+establishments ||--o{ useful_contacts
+establishments ||--o{ students
+establishments ||--o{ declaration_submissions
+
+subscription_plans ||--o{ subscription_plan_prices : "versioned prices"
+subscription_plans ||--o{ subscriptions
+subscription_plan_prices ||--o{ subscriptions : "applied price"
+establishments ||--o{ subscriptions
+subscriptions ||--o{ payments
+establishments ||--o{ payments
+
+registration_requests |o--o| establishments : "created on validation"
+registration_requests ||--o{ registration_request_events : "history"
+users |o--o{ registration_requests : "assigned_to"
+users |o--o{ demo_requests : "handled_by"
+
+' Logical links without a foreign key (history outlives deleted accounts)
+users .. audit_logs : "actor_user_id (no FK)"
+users .. registration_request_events : "actor_user_id (no FK)"
+reference_values .. declaration_submissions : "event_type_code, location_code (no FK)"
+
+@enduml
