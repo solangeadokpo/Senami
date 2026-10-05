@@ -1,0 +1,18 @@
+# LF everywhere in the history, whatever the developer's platform.
+* text=auto eol=lf
+
+*.sh        text eol=lf
+Dockerfile  text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.sql       text eol=lf
+
+# Generated: keep it out of review diffs.
+pnpm-lock.yaml -diff linguist-generated
+backend/drizzle/meta/** -diff linguist-generated
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.pdf binary

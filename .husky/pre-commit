@@ -1,0 +1,6 @@
+# Each project runs its own lint-staged, with its own .lintstagedrc.json and
+# its own tools, on the staged files under its folder.
+for project in backend web mobile; do
+  [ -f "$project/package.json" ] || continue
+  (cd "$project" && pnpm exec lint-staged) || exit 1
+done

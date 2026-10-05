@@ -1,0 +1,36 @@
+# Dependencies
+node_modules
+
+# Build
+dist
+*.tsbuildinfo
+
+# Tests
+coverage
+
+# Environment: .env.example is committed, .env is not
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Editors and OS
+.idea
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+
+# AI agent configuration is personal: each developer keeps their own rules and
+# skills. The shared practices live in each project's docs/ (versioned).
+.claude/
+.agents/
+.cursor/
+.windsurf/
+AGENTS.md
+CLAUDE.md
+GEMINI.md

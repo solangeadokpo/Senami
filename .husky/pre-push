@@ -1,0 +1,6 @@
+# Typecheck and unit tests of every project present in the repository.
+for project in backend web mobile; do
+  [ -f "$project/package.json" ] || continue
+  echo "pre-push: $project"
+  (cd "$project" && pnpm run --if-present typecheck && pnpm run --if-present test) || exit 1
+done

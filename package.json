@@ -1,0 +1,15 @@
+{
+  "name": "senami",
+  "private": true,
+  "description": "Repository-level tooling only: git hooks and commit message rules. Each project (backend, web, mobile) is standalone.",
+  "type": "module",
+  "packageManager": "pnpm@12.6.0",
+  "scripts": {
+    "prepare": "[ \"$NODE_ENV\" = production ] || husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
+    "husky": "^9.1.7"
+  }
+}
