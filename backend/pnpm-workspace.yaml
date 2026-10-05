@@ -1,0 +1,6 @@
+# pnpm settings for this project (no workspace: the backend is standalone).
+# Install scripts are denied by default. None of these needs one: esbuild ships
+# its binary as an optional dependency, scarf is install telemetry.
+allowBuilds:
+  '@scarf/scarf': false
+  esbuild: false
