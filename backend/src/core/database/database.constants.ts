@@ -1,5 +1,5 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type * as schema from '../../database/schema/index.js';
+import type * as schema from '@database/schema/index.js';
 
 /** Typed Drizzle client. Injected only into `*.repository.drizzle.ts` files. */
 export const DRIZZLE = Symbol('DRIZZLE');

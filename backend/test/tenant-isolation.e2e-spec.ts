@@ -5,8 +5,8 @@ import {
   type Database,
   asSuperAdmin,
   withTenant,
-} from '../src/core/database/index.js';
-import { establishments, students } from '../src/database/schema/index.js';
+} from '@core/database/index.js';
+import { establishments, students } from '@database/schema/index.js';
 import { createTestApp } from './app.js';
 
 describe('tenant isolation (row level security)', () => {

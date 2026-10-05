@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
 import { sql } from 'drizzle-orm';
-import { DRIZZLE, type Database } from '../database/index.js';
+import { DRIZZLE, type Database } from '@core/database/index.js';
 
 const DATABASE_TIMEOUT_MS = 1_500;
 

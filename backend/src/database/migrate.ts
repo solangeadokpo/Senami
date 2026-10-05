@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { env } from '../config/env.validation.js';
+import { env } from '@config/env.validation.js';
 import { runMigrations } from './run-migrations.js';
 
 // Production entry point: drizzle-kit is a dev dependency and is not in the

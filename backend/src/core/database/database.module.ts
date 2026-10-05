@@ -8,8 +8,8 @@ import {
 import type { ConfigType } from '@nestjs/config';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import { databaseConfig } from '../../config/index.js';
-import * as schema from '../../database/schema/index.js';
+import { databaseConfig } from '@config/index.js';
+import * as schema from '@database/schema/index.js';
 import { DRIZZLE, PG_POOL } from './database.constants.js';
 
 /** Global on purpose: every repository needs the client, nothing else does. */

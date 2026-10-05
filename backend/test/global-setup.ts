@@ -1,5 +1,5 @@
 import { config } from 'dotenv';
-import { runMigrations } from '../src/database/run-migrations.js';
+import { runMigrations } from '@database/run-migrations.js';
 
 /** Brings the test database to the latest migration before the suites run. */
 export default async function setup(): Promise<void> {

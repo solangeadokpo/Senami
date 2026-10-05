@@ -1,7 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
-import { DRIZZLE, type Database } from '../src/core/database/index.js';
-import { auditLogs, establishments } from '../src/database/schema/index.js';
+import { DRIZZLE, type Database } from '@core/database/index.js';
+import { auditLogs, establishments } from '@database/schema/index.js';
 import { createTestApp } from './app.js';
 
 describe('database guarantees', () => {

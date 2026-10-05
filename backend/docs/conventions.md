@@ -159,7 +159,38 @@ src/modules/students/
 - `noUncheckedIndexedAccess`: `array[0]` is `T | undefined`; destructure and
   test.
 - `import type` for type-only imports (enforced by ESLint).
-- Native ESM: relative imports end in `.js`. No path aliases.
+
+## Imports
+
+The project is native ESM (`"type": "module"`). All the code is TypeScript;
+an import names the **compiled** file, so it ends in `.js`. Node requires the
+exact file at runtime and TypeScript does not rewrite paths.
+
+- **Aliases** for anything outside the current folder, never `../` (ESLint
+  rejects it):
+
+  | Alias         | Folder                                                     |
+  | ------------- | ---------------------------------------------------------- |
+  | `@config/*`   | `src/config/`                                              |
+  | `@core/*`     | `src/core/`                                                |
+  | `@shared/*`   | `src/shared/`                                              |
+  | `@modules/*`  | `src/modules/`                                             |
+  | `@database/*` | `src/database/`                                            |
+  | `@src/*`      | `src/` (root files: `app.module`, `bootstrap`; tests only) |
+
+  ```ts
+  import { env } from '@config/env.validation.js';
+  import { NotFoundError } from '@shared/errors/domain.error.js';
+  import { StudentsService } from './students.service.js';
+  ```
+
+- `./` stays for a file of the same folder or below.
+- Import the narrowest path: `@shared/errors/domain.error.js` rather than the
+  `@shared/index.js` barrel, which pulls more than a single file needs.
+- Aliases are declared once, in `tsconfig.json` (`paths`). `nest build`
+  rewrites them into relative paths in `dist/`; Vitest resolves them through
+  `vite-tsconfig-paths`. A new top-level folder under `src/` gets its alias
+  there, and in the ESLint message of `no-restricted-imports`.
 
 ## Testing
 
