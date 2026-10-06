@@ -14,6 +14,7 @@ import {
   type ResolvedError,
 } from '@shared/errors/error-mapper.js';
 import { REQUEST_ID_HEADER } from '@shared/middleware/request-id.middleware.js';
+import { pathWithoutQuery } from '@shared/utils/path-without-query.js';
 
 const INTERNAL_ERROR: ResolvedError = {
   status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -99,5 +100,5 @@ export class AllExceptionsFilter implements ExceptionFilter {
 // originalUrl, not path: Nest strips the global prefix from `path` on an
 // unknown route. The query string is dropped, it may hold personal data.
 function pathOf(request: Pick<Request, 'originalUrl'>): string {
-  return new URL(request.originalUrl, 'http://localhost').pathname;
+  return pathWithoutQuery(request.originalUrl);
 }
