@@ -3,9 +3,10 @@ import { ConfigModule } from '@nestjs/config';
 import { configurations, validateEnvironment } from '@config/index.js';
 import { DatabaseModule } from './database/database.module.js';
 import { HealthModule } from './health/health.module.js';
+import { LoggingModule } from './logging/logging.module.js';
 
 /**
- * Infrastructure holding state (config, pool). Imported once, by AppModule.
+ * Infrastructure holding state (config, logger, pool). Imported once, by AppModule.
  * A business module needing CoreModule is a design error.
  */
 @Module({
@@ -17,6 +18,7 @@ import { HealthModule } from './health/health.module.js';
       load: configurations,
       validate: validateEnvironment,
     }),
+    LoggingModule,
     DatabaseModule,
     HealthModule,
   ],

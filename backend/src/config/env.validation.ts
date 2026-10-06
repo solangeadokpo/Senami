@@ -20,6 +20,11 @@ export enum NodeEnv {
   PRODUCTION = 'production',
 }
 
+export enum LogFormat {
+  JSON = 'json',
+  PRETTY = 'pretty',
+}
+
 export enum LogLevel {
   VERBOSE = 'verbose',
   DEBUG = 'debug',
@@ -60,6 +65,11 @@ export class EnvironmentVariables {
 
   @IsEnum(LogLevel)
   LOG_LEVEL: LogLevel = LogLevel.LOG;
+
+  // Defaults to pretty in development, json elsewhere (see appConfig).
+  @IsEnum(LogFormat)
+  @IsOptional()
+  LOG_FORMAT?: LogFormat;
 
   @Matches(/^postgres(ql)?:\/\//, {
     message: 'DATABASE_URL must be a postgres:// connection string',

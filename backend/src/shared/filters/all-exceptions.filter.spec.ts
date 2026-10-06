@@ -78,14 +78,22 @@ describe('AllExceptionsFilter', () => {
     expect(body).toHaveProperty('error.timestamp');
   });
 
-  it('never returns the context, and logs it', () => {
+  it('never returns the context, and logs it as structured fields', () => {
     const exception = new Error('not found');
     const filter = new AllExceptionsFilter([mapperFor(exception, NOT_FOUND)]);
 
     const { body } = respond(filter, exception);
 
     expect(JSON.stringify(body)).not.toContain('internal');
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining('internal'));
+    expect(warn).toHaveBeenCalledWith(
+      'Student not found',
+      expect.objectContaining({
+        status: 404,
+        code: 'STUDENT_NOT_FOUND',
+        path: '/api/v1/students/s1',
+        errorContext: { secret: 'internal' },
+      }),
+    );
   });
 
   it('answers an unknown error with a 500 that hides its message', () => {
@@ -115,8 +123,8 @@ describe('AllExceptionsFilter', () => {
     respond(filter, exception);
 
     expect(error).toHaveBeenCalledWith(
-      expect.stringContaining('SECURITY'),
-      expect.any(String),
+      'Forbidden',
+      expect.objectContaining({ securityAlert: true, err: exception }),
     );
     expect(warn).not.toHaveBeenCalled();
   });

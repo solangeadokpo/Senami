@@ -40,7 +40,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const resolved = this.resolve(exception);
     const requestId = request.headers[REQUEST_ID_HEADER];
 
-    this.log(exception, resolved, request, requestId);
+    this.log(exception, resolved, request);
 
     response.status(resolved.status).json({
       error: {
@@ -73,27 +73,29 @@ export class AllExceptionsFilter implements ExceptionFilter {
     exception: unknown,
     resolved: ResolvedError,
     request: Request,
-    requestId: string | string[] | undefined,
   ): void {
-    const line = `${request.method} ${pathOf(request)} ${resolved.status} ${resolved.code} requestId=${String(requestId)}`;
-    const context =
-      resolved.context === undefined
-        ? ''
-        : ` context=${JSON.stringify(resolved.context)}`;
+    const fields = {
+      status: resolved.status,
+      code: resolved.code,
+      path: pathOf(request),
+      ...(resolved.context === undefined
+        ? {}
+        : { errorContext: resolved.context }),
+      ...(resolved.securityAlert === true ? { securityAlert: true } : {}),
+    };
 
     if (
       resolved.status >= Number(HttpStatus.INTERNAL_SERVER_ERROR) ||
       resolved.securityAlert === true
     ) {
-      const stack = exception instanceof Error ? exception.stack : undefined;
-      this.logger.error(
-        `${resolved.securityAlert === true ? 'SECURITY ' : ''}${line}${context}`,
-        stack,
-      );
+      this.logger.error(resolved.message, {
+        ...fields,
+        ...(exception instanceof Error ? { err: exception } : {}),
+      });
       return;
     }
 
-    this.logger.warn(`${line}${context}`);
+    this.logger.warn(resolved.message, fields);
   }
 }
 
