@@ -1,6 +1,5 @@
-import type { LogLevel as NestLogLevel } from '@nestjs/common';
 import { registerAs } from '@nestjs/config';
-import { LogLevel, NodeEnv, env } from './env.validation.js';
+import { LogFormat, NodeEnv, env } from './env.validation.js';
 
 export const appConfig = registerAs('app', () => {
   const e = env();
@@ -15,21 +14,11 @@ export const appConfig = registerAs('app', () => {
     corsOrigins: e.CORS_ORIGINS.split(',')
       .map((origin) => origin.trim())
       .filter((origin) => origin.length > 0),
-    logLevels: resolveLogLevels(e.LOG_LEVEL),
+    logLevel: e.LOG_LEVEL,
+    logFormat:
+      e.LOG_FORMAT ??
+      (e.NODE_ENV === NodeEnv.DEVELOPMENT ? LogFormat.PRETTY : LogFormat.JSON),
   };
 });
 
 export type AppConfig = ReturnType<typeof appConfig>;
-
-// Nest has no threshold: `useLogger` expects the exhaustive list of levels.
-function resolveLogLevels(level: LogLevel): NestLogLevel[] {
-  const hierarchy: Record<LogLevel, NestLogLevel[]> = {
-    [LogLevel.VERBOSE]: ['error', 'warn', 'log', 'debug', 'verbose'],
-    [LogLevel.DEBUG]: ['error', 'warn', 'log', 'debug'],
-    [LogLevel.LOG]: ['error', 'warn', 'log'],
-    [LogLevel.WARN]: ['error', 'warn'],
-    [LogLevel.ERROR]: ['error'],
-  };
-
-  return hierarchy[level];
-}

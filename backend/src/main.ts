@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
+import { NativeLogger } from 'nestjs-pino';
 import { AppModule } from './app.module.js';
 import { apiBasePath, configureApp } from './bootstrap.js';
 import { SenamiExpressAdapter } from './core/http/senami-express.adapter.js';
@@ -20,7 +21,7 @@ async function bootstrap(): Promise<void> {
   );
   const config = app.get<AppConfig>(appConfig.KEY);
 
-  app.useLogger(config.logLevels);
+  app.useLogger(app.get(NativeLogger));
   // Behind a reverse proxy: client IP for the audit log and rate limiting.
   app.set('trust proxy', 1);
 

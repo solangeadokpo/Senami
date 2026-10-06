@@ -185,7 +185,7 @@ kind of error (a payment provider SDK), add a mapper, do not touch the filter.
 Every request carries an `X-Request-Id` (kept from the client when safe,
 generated otherwise), echoed in the response and in the error body, and on
 every log line. 4xx are logged at `warn`, 5xx and security alerts at `error`
-with the stack. Logs never contain a request body or a query string.
+with the stack (see [Logging](#logging)).
 
 ### Catching
 
@@ -195,6 +195,39 @@ with the stack. Logs never contain a request body or a query string.
 - A caught value is `unknown`: narrow it, never cast it.
 - The filter only sees HTTP requests. Scheduled jobs and background tasks
   catch and log their own errors; a promise is never left unhandled.
+
+## Logging
+
+pino, through `nestjs-pino`. Code logs with `Logger` from `@nestjs/common`;
+`main.ts` routes it to pino (`NativeLogger`).
+
+```ts
+private readonly logger = new Logger(StudentsService.name);
+
+this.logger.log('Students imported', { establishmentId, created: 12 });
+this.logger.warn('Import row rejected', { establishmentId, row: 7 });
+this.logger.error('Email provider failed', { err: error });
+```
+
+- **Message first, then an object of fields.** The fields land at the root of
+  the JSON line, so they can be searched. Never build them into the message.
+- **Identifiers, never personal data**: `studentId`, `establishmentId`, not a
+  name or an email. Never anything from an accident sheet.
+- Every line written during a request carries its `requestId` automatically.
+- One access line per request (method, path, status, duration), written by
+  `pino-http`: do not log "request received" yourself. Health probes are not
+  logged.
+- Never logged, by configuration: request and response bodies, query strings,
+  headers, the client IP address. `authorization`, `cookie` and `set-cookie`
+  are redacted wherever they appear.
+- Levels: `error` needs an action, `warn` is an expected failure (4xx, a
+  rejected import row), `log` a business event, `debug` and `verbose` for
+  diagnosis. `LOG_LEVEL` sets the threshold.
+- `LOG_FORMAT=json` (default outside development) writes one JSON object per
+  line on stdout; `pretty` is for a terminal only, its formatter is not in the
+  production image. The application never writes log files: the host
+  collects stdout and owns the retention.
+- A script running without Nest uses `createStandaloneLogger(name)`.
 
 ## API
 

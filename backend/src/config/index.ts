@@ -5,6 +5,7 @@ export { appConfig, type AppConfig } from './app.config.js';
 export { databaseConfig, type DatabaseConfig } from './database.config.js';
 export {
   EnvironmentVariables,
+  LogFormat,
   LogLevel,
   NodeEnv,
   env,

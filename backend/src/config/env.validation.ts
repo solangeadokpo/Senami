@@ -1,3 +1,6 @@
+// Implicit conversion reads the decorator type metadata: load the polyfill
+// here, so a script validating the environment without Nest works too.
+import 'reflect-metadata';
 import { plainToInstance } from 'class-transformer';
 import {
   IsEnum,
@@ -15,6 +18,11 @@ export enum NodeEnv {
   DEVELOPMENT = 'development',
   TEST = 'test',
   PRODUCTION = 'production',
+}
+
+export enum LogFormat {
+  JSON = 'json',
+  PRETTY = 'pretty',
 }
 
 export enum LogLevel {
@@ -57,6 +65,11 @@ export class EnvironmentVariables {
 
   @IsEnum(LogLevel)
   LOG_LEVEL: LogLevel = LogLevel.LOG;
+
+  // Defaults to pretty in development, json elsewhere (see appConfig).
+  @IsEnum(LogFormat)
+  @IsOptional()
+  LOG_FORMAT?: LogFormat;
 
   @Matches(/^postgres(ql)?:\/\//, {
     message: 'DATABASE_URL must be a postgres:// connection string',
