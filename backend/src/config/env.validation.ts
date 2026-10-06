@@ -1,3 +1,6 @@
+// Implicit conversion reads the decorator type metadata: load the polyfill
+// here, so a script validating the environment without Nest works too.
+import 'reflect-metadata';
 import { plainToInstance } from 'class-transformer';
 import {
   IsEnum,
