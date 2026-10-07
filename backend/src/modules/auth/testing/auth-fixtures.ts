@@ -13,6 +13,9 @@ export const TEST_AUTH_CONFIG: AuthConfig = {
   jwtSecret: 'unit-test-secret-of-at-least-32-characters',
   accessTokenTtlMinutes: 15,
   mobileSessionDays: 30,
+  backofficeSessionHours: 12,
+  totpEncryptionKey: Buffer.alloc(32, 7),
+  secureCookies: false,
 };
 
 export function createTokenService(clock: FakeClock): TokenService {

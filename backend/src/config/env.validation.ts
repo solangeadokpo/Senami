@@ -96,6 +96,18 @@ export class EnvironmentVariables extends ScriptEnvironment {
   @Min(1)
   @Max(365)
   MOBILE_SESSION_DAYS: number = 30;
+
+  // Fixed: a back office session ends this many hours after the sign-in.
+  @IsInt()
+  @Min(1)
+  @Max(24)
+  BACKOFFICE_SESSION_HOURS: number = 12;
+
+  // Encrypts the TOTP secrets: 32 random bytes, base64.
+  @Matches(/^[A-Za-z0-9+/]{43}=$/, {
+    message: 'TOTP_ENCRYPTION_KEY must be 32 bytes encoded in base64',
+  })
+  TOTP_ENCRYPTION_KEY: string;
 }
 
 /** `bootstrap` seed: the first super administrator. */

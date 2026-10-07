@@ -6,7 +6,6 @@ import type { AuthenticatedUser } from '@shared/interfaces/authenticated-user.in
 import { CLOCK, type Clock } from '@shared/interfaces/clock.interface.js';
 import { assertAccountMayUse } from '@modules/auth/access-policy.js';
 import {
-  InvalidCredentialsError,
   InvalidRefreshTokenError,
   RefreshTokenReusedError,
   SessionExpiredError,
@@ -18,7 +17,7 @@ import {
   AUTH_REPOSITORY,
   type AuthRepository,
 } from '@modules/auth/repositories/auth.repository.js';
-import { PasswordHasherService } from './password-hasher.service.js';
+import { CredentialsService } from './credentials.service.js';
 import { TokenService } from './token.service.js';
 
 export interface MobileLoginInput {
@@ -59,7 +58,7 @@ const DAY_MS = 86_400_000;
 export class AuthService {
   constructor(
     @Inject(AUTH_REPOSITORY) private readonly repository: AuthRepository,
-    private readonly passwords: PasswordHasherService,
+    private readonly credentials: CredentialsService,
     private readonly tokens: TokenService,
     @Inject(authConfig.KEY) private readonly config: AuthConfig,
     @Inject(CLOCK) private readonly clock: Clock,
@@ -68,14 +67,7 @@ export class AuthService {
   async loginMobile(
     input: MobileLoginInput,
   ): Promise<TokenPair & { user: AuthUserView }> {
-    const account = await this.repository.findAccountByEmail(input.email);
-    if (account === undefined || account.passwordHash === null) {
-      await this.passwords.verifyAgainstDummy(input.password);
-      throw new InvalidCredentialsError();
-    }
-    if (!(await this.passwords.verify(account.passwordHash, input.password))) {
-      throw new InvalidCredentialsError();
-    }
+    const account = await this.credentials.verify(input.email, input.password);
 
     // Account states are disclosed only to someone who knows the password.
     assertAccountMayUse(account, SessionChannel.MOBILE);
@@ -197,7 +189,7 @@ export class AuthService {
   }
 }
 
-function toUserView(account: Account): AuthUserView {
+export function toUserView(account: Account): AuthUserView {
   return {
     id: account.userId,
     email: account.email,

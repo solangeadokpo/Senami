@@ -21,6 +21,7 @@ import {
 import type { Account } from '@modules/auth/repositories/auth.repository.js';
 import { FakeAuthRepository } from '@modules/auth/repositories/auth.repository.fake.js';
 import { AuthService, type MobileLoginInput } from './auth.service.js';
+import { CredentialsService } from './credentials.service.js';
 import { PasswordHasherService } from './password-hasher.service.js';
 import {
   TEST_AUTH_CONFIG,
@@ -46,7 +47,7 @@ describe('AuthService', () => {
     repository = new FakeAuthRepository();
     service = new AuthService(
       repository,
-      hasher,
+      new CredentialsService(repository, hasher),
       createTokenService(clock),
       TEST_AUTH_CONFIG,
       clock,
