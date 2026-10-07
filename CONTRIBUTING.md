@@ -47,36 +47,24 @@ the commit message rules.
 
 ## Git hooks
 
-| Hook         | Runs                                                                |
-| ------------ | ------------------------------------------------------------------- |
+| Hook         | Runs                                                                     |
+| ------------ | ------------------------------------------------------------------------ |
 | `pre-commit` | lint-staged, with each project's `.lintstagedrc.json` (Prettier, ESLint) |
-| `commit-msg` | commitlint                                                          |
-| `pre-push`   | `typecheck` and unit tests of every project                         |
+| `commit-msg` | commitlint                                                               |
+| `pre-push`   | `typecheck` and unit tests of every project                              |
 
 Do not bypass them with `--no-verify`. If a hook fails, fix the cause.
 
 ## Feature work
 
 1. A new feature starts with a spec in
-   `<project>/docs/features/<resource>/<feature>.md`: purpose, **tree**,
-   behaviour (with examples), affected areas, new files, tests, dependencies,
-   out of scope. Reference the requirement ids of the functional
-   specification (`DEC-04`, `HL-06`...).
-2. The **tree** shows every folder and file the feature creates or modifies,
-   marked `(new)` or `(modified)`, each with a few words on its role. It comes
-   right after the purpose: the structure is validated before anything else.
-
-   ```
-   src/modules/students/                    (new)
-   ├── students.module.ts                   (new)  wiring
-   ├── controllers/students.controller.ts   (new)  CRUD and import endpoints
-   └── services/students.service.ts         (new)  import rules
-   src/modules/modules.module.ts            (modified)  registers StudentsModule
-   ```
-
-3. The spec is reviewed, tree included, before the code is written.
-4. Tests follow the spec: one per behaviour and per failure case.
-5. A change to an existing feature updates its spec, its tree and its tests.
+   `<project>/docs/features/<resource>/<feature>.md`: purpose, behaviour
+   (with examples), affected areas, new files, tests, dependencies, out of
+   scope. Reference the requirement ids of the functional specification
+   (`DEC-04`, `HL-06`...).
+2. The spec is reviewed before the code is written.
+3. Tests follow the spec: one per behaviour and per failure case.
+4. A change to an existing feature updates its spec and its tests.
 
 ## Pull requests
 

@@ -12,49 +12,6 @@ once: a deactivated user, a suspended establishment or a revoked device must
 lose access on its next request, not when a token expires. Give every
 endpoint a single, declarative way to require authentication and a role.
 
-## Tree
-
-```
-backend/
-├── package.json                                (modified)  @nestjs/jwt, @nestjs/throttler, @node-rs/argon2, cookie-parser
-├── .env.example, .env.test                     (modified)  JWT_SECRET, ACCESS_TOKEN_TTL_MINUTES, MOBILE_SESSION_DAYS
-├── docker-compose.yml                          (modified)  JWT_SECRET for the api service
-├── eslint.config.mjs                           (modified)  enum values not hard-coded, `_` prefix allowed
-├── drizzle/0004_auth_session_previous_token.sql (new)     previous_refresh_token_hash
-├── src/
-│   ├── bootstrap.ts                            (modified)  cookie-parser
-│   ├── config/
-│   │   ├── auth.config.ts                      (new)       jwt secret, token and session durations
-│   │   └── env.validation.ts                   (modified)  ScriptEnvironment / EnvironmentVariables
-│   ├── core/
-│   │   ├── core.module.ts                      (modified)  imports TimeModule
-│   │   ├── health/health.controller.ts         (modified)  @Public()
-│   │   └── time/                               (new)       TimeModule, SystemClock
-│   ├── database/
-│   │   ├── migrate.ts                          (modified)  script environment only
-│   │   └── schema/                             (modified)  pgEnums built from the enums, sqlValue()
-│   ├── modules/
-│   │   ├── modules.module.ts                   (modified)  registers AuthModule
-│   │   └── auth/                               (new)
-│   │       ├── auth.module.ts, auth.errors.ts, auth.constants.ts, access-policy.ts
-│   │       ├── controllers/                    auth, sessions
-│   │       ├── services/                       auth, sessions, token, password-hasher
-│   │       ├── guards/                         auth, roles, login-throttler
-│   │       ├── repositories/                   interface, drizzle, fake
-│   │       ├── dto/                            requests and responses
-│   │       └── testing/                        fixtures
-│   └── shared/
-│       ├── decorators/                         (modified)  public, roles, current-user
-│       ├── enums/                              (new)       every domain enum
-│       ├── interfaces/                         (new)       authenticated-user, clock
-│       └── testing/fake-clock.ts               (new)
-├── test/
-│   ├── app.ts                                  (modified)
-│   ├── auth.e2e-spec.ts                        (new)
-│   └── fixtures/accounts.ts                    (new)       establishment, subscription, users
-└── docs/                                       (modified)  conventions, database, this spec
-```
-
 ## Behaviour
 
 ### Channels
