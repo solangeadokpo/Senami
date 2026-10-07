@@ -15,12 +15,10 @@ test('serves the showcase site, indexable', async ({ page }) => {
 });
 
 test('serves the back office on its host, not indexable', async ({ page }) => {
-  const response = await page.goto(APP_URL);
+  const response = await page.goto(`${APP_URL}/connexion`);
 
   expect(response?.status()).toBe(200);
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-    'Espace d’administration',
-  );
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Connexion');
   expect(response?.headers()['x-robots-tag']).toBe('noindex, nofollow');
 });
 

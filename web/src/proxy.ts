@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { publicEnv } from '@config/public-env';
+import { SESSION_COOKIE } from '@core/api/session-cookie';
 import { resolveZone } from '@core/routing/zones';
 
 const APP_HOST = new URL(publicEnv.appUrl).host;
@@ -10,11 +11,14 @@ export function proxy(request: NextRequest): NextResponse {
     request.headers.get('host'),
     request.nextUrl.pathname,
     APP_HOST,
+    request.cookies.has(SESSION_COOKIE),
   );
 
   switch (decision.kind) {
     case 'site':
       return NextResponse.next();
+    case 'sign-in':
+      return NextResponse.redirect(new URL(decision.redirectTo, request.url));
     case 'not-found':
       return NextResponse.rewrite(new URL(NOT_FOUND_PATH, request.url));
     case 'admin': {

@@ -33,7 +33,7 @@ describe('createApiClient', () => {
     const stub = respond(200, { data: [{ id: 1 }], meta: { total: 1 } });
     const client = createApiClient({ baseUrl: BASE_URL, fetch: stub.fetch });
 
-    await expect(client.request('/students')).resolves.toEqual({
+    await expect(client.request('/students')).resolves.toMatchObject({
       data: [{ id: 1 }],
       meta: { total: 1 },
     });
@@ -71,7 +71,26 @@ describe('createApiClient', () => {
 
     await expect(
       client.request('/sessions/1', { method: 'DELETE' }),
-    ).resolves.toEqual({ data: undefined });
+    ).resolves.toMatchObject({ data: undefined });
+  });
+
+  it('exposes the response headers, such as a session cookie', async () => {
+    const client = createApiClient({
+      baseUrl: BASE_URL,
+      fetch: () =>
+        Promise.resolve(
+          new Response(JSON.stringify({ data: null }), {
+            status: 200,
+            headers: { 'Set-Cookie': 'senami_session=abc; Path=/; HttpOnly' },
+          }),
+        ),
+    });
+
+    const { headers } = await client.request('/auth/backoffice/totp/verify');
+
+    expect(headers.getSetCookie()).toEqual([
+      'senami_session=abc; Path=/; HttpOnly',
+    ]);
   });
 
   it('turns the error body into an ApiError', async () => {
