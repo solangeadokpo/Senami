@@ -7,43 +7,6 @@ can be reached at all, and give development and acceptance testing a ready
 establishment with a responsable and an intervenant who can sign in, without
 creating them by hand in the database.
 
-## Tree
-
-```
-backend/
-├── package.json                                  (modified)  db:seed, db:seed:bootstrap, db:seed:demo, db:seed:prod; tsx
-├── .env.example                                  (modified)  SEED_* variables
-├── README.md                                     (modified)  seeding commands
-├── src/
-│   ├── config/
-│   │   ├── env.validation.ts                     (modified)  BootstrapSeedEnvironment, DemoSeedEnvironment
-│   │   └── env.validation.spec.ts                (modified)  their validation
-│   ├── core/database/
-│   │   ├── create-database.ts                    (new)       the Drizzle client, shared by the API and the scripts
-│   │   ├── database.module.ts                    (modified)  uses createDatabase()
-│   │   └── index.ts                              (modified)  exports createDatabase
-│   ├── shared/enums/billing-interval.enum.ts     (new)       month, year: subscription_plans.billing_interval
-│   └── database/
-│       ├── schema/billing.ts                     (modified)  billing_interval typed and checked from its enum
-│       └── seeds/                                (new)
-│           ├── seed.ts                           (new)  entry point: seed.js bootstrap | demo | all
-│           ├── seed-runner.ts                    (new)  level parsing, production guard, seeders of a level
-│           ├── seed-runner.spec.ts               (new)  their tests
-│           ├── seed-level.enum.ts                (new)  bootstrap, demo, all
-│           ├── seed-context.ts                   (new)  Seeder, and what it receives: db, logger, clock, hasher
-│           └── seeders/                          (new)
-│               ├── super-admin.seeder.ts         (new)  first super administrator
-│               ├── subscription-plan.seeder.ts   (new)  "Annuel" plan and its price
-│               └── demo-establishment.seeder.ts  (new)  establishment, subscription, users, recipient, contacts
-├── test/
-│   ├── seeds.e2e-spec.ts                         (new)       runs the seeds twice on the test database
-│   └── fixtures/accounts.ts                      (modified)  BillingInterval
-└── docs/
-    ├── conventions.md                            (modified)  where a local enum lives
-    ├── database.md                               (modified)  "Seeding" section
-    └── features/database/seeders.md              (new)  this spec
-```
-
 ## Behaviour
 
 ### Levels
