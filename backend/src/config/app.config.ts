@@ -1,5 +1,5 @@
 import { registerAs } from '@nestjs/config';
-import { LogFormat, NodeEnv, env } from './env.validation.js';
+import { NodeEnv, env, logSettings } from './env.validation.js';
 
 export const appConfig = registerAs('app', () => {
   const e = env();
@@ -14,10 +14,7 @@ export const appConfig = registerAs('app', () => {
     corsOrigins: e.CORS_ORIGINS.split(',')
       .map((origin) => origin.trim())
       .filter((origin) => origin.length > 0),
-    logLevel: e.LOG_LEVEL,
-    logFormat:
-      e.LOG_FORMAT ??
-      (e.NODE_ENV === NodeEnv.DEVELOPMENT ? LogFormat.PRETTY : LogFormat.JSON),
+    ...logSettings(e),
   };
 });
 

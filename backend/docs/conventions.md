@@ -25,27 +25,69 @@ docs/                    this file, database.md, features/<resource>/<feature>.m
 | ---------- | ----------------------------------------------------------------------------------------------------- |
 | `config/`  | Definitions only. No state, no I/O.                                                                   |
 | `core/`    | Holds state. Imported once, by `AppModule`. A business module needing `CoreModule` is a design error. |
-| `shared/`  | Stateless, importable anywhere. Created with the first business module.                               |
+| `shared/`  | Stateless, importable anywhere, grouped by technical kind (below).                                    |
 | `modules/` | Each module is registered in `modules.module.ts`, the only change outside its folder.                 |
+
+### Shared, by technical kind
+
+`shared/` is a toolbox, grouped by the kind of building block. Business
+modules are the opposite: grouped by feature.
+
+```
+src/shared/
+├── decorators/    *.decorator.ts     public, roles, current-user, serialize, ...
+├── dto/           *.dto.ts           pagination, error response
+├── enums/         *.enum.ts          every domain enum (the pgEnums are built from them)
+├── errors/        domain errors, error codes, error mappers
+├── filters/       *.filter.ts
+├── interceptors/  *.interceptor.ts
+├── interfaces/    *.interface.ts     authenticated user, clock (+ its injection token)
+├── middleware/    *.middleware.ts
+├── testing/       test doubles shared by modules (fake clock)
+├── utils/         pure functions
+└── validation/    request validation
+```
+
+A new shared building block goes in the folder of its kind; create the folder
+if the kind is new. No folder named after a feature (`shared/auth/`) in
+`shared/`.
 
 ### A business module
 
+A module always has the same sub-folders, even with a single file in one of
+them: no file moves the day a second controller arrives.
+
 ```
-src/modules/students/
-├── students.module.ts
-├── students.controller.ts
-├── students.service.ts
-├── students.service.spec.ts
-├── students.repository.ts          interface + Symbol token
-├── students.repository.drizzle.ts  the only file importing Drizzle
-├── students.repository.fake.ts     in-memory, for the service tests
-├── students.errors.ts              DomainError subclasses of the module
-└── dto/
-    ├── create-student.dto.ts
-    ├── update-student.dto.ts
-    ├── list-students-query.dto.ts
-    └── student-response.dto.ts
+src/modules/auth/
+├── auth.module.ts
+├── auth.constants.ts
+├── auth.errors.ts                    DomainError subclasses of the module
+├── access-policy.ts                  a pure business rule (+ .spec.ts)
+├── controllers/
+│   ├── auth.controller.ts
+│   └── sessions.controller.ts
+├── services/
+│   ├── auth.service.ts               (+ auth.service.spec.ts, next to it)
+│   ├── sessions.service.ts
+│   ├── token.service.ts
+│   └── password-hasher.service.ts
+├── guards/
+│   ├── auth.guard.ts
+│   └── roles.guard.ts
+├── repositories/
+│   ├── auth.repository.ts            interface + Symbol token
+│   ├── auth.repository.drizzle.ts    the only file importing Drizzle
+│   └── auth.repository.fake.ts       in memory, for the service tests
+├── dto/
+│   ├── mobile-login.dto.ts
+│   └── auth-response.dto.ts
+└── testing/                          fixtures for the module tests, excluded from the build
 ```
+
+Kinds a module may hold: `controllers/`, `services/`, `repositories/`,
+`dto/`, and when needed `guards/`, `interceptors/`, `pipes/`, `testing/`.
+Module-wide files (`*.module.ts`, `*.errors.ts`, `*.constants.ts`) stay at
+the module root. Unit tests sit next to the file they test.
 
 ## Layering and dependency injection
 
@@ -229,6 +271,55 @@ this.logger.error('Email provider failed', { err: error });
   collects stdout and owns the retention.
 - A script running without Nest uses `createStandaloneLogger(name)`.
 
+## Domain values
+
+A value with a business meaning (a role, a channel, a status) is an enum,
+never a string written by hand. The PostgreSQL enum is built from the same
+TypeScript enum (`pgEnum('user_role', UserRole)`), so the value exists in one
+place only.
+
+```ts
+// Wrong
+if (user.role === 'super_admin') {}
+@Roles('responsable')
+
+// Right
+if (user.role === UserRole.SUPER_ADMIN) {}
+@Roles(UserRole.RESPONSABLE)
+```
+
+Every enum lives in `src/shared/enums/<name>.enum.ts`. In the Drizzle schema,
+a value inlined in a check constraint or a partial index goes through
+`sqlValue(UserStatus.ACTIVE)` or `sqlValues(Object.values(DevicePlatform))`,
+never a quoted string. In tests too: `status: UserStatus.DEACTIVATED`.
+
+ESLint rejects the role and channel values written by hand
+(`no-restricted-syntax`). Values that are common words (`active`, `new`) cannot
+be banned mechanically: review checks them.
+
+## Authentication
+
+Every route requires an authenticated session by default
+([spec](features/auth/authentication-and-sessions.md)). The global
+`AuthGuard` reads the session from the database on each request, so a
+revocation or a deactivation applies at once.
+
+```ts
+@Public()                               // opt out: health, sign-in, public forms
+@Roles(UserRole.RESPONSABLE, UserRole.SUPER_ADMIN) // restrict; none = any role
+handler(@CurrentUser() user: AuthenticatedUser) {}
+```
+
+- `user.establishmentId` is the tenant of the request: pass it to
+  `withTenant()`. Never take an establishment id from the body or the query
+  to decide what a user may see.
+- Hide what a user may not reach: another establishment's resource answers
+  404, as if it did not exist, not 403.
+- Passwords are hashed with argon2id (`PasswordHasher`); tokens are only
+  stored as hashes. Never log a password, a token or a cookie.
+- Services take the time from the injected `Clock` (`CLOCK`), not from
+  `new Date()`, so that tests control it.
+
 ## API
 
 - URI versioning (`/api/v1/...`). Health probes stay outside the prefix and
@@ -411,13 +502,13 @@ resource (`StudentsService`); entities and DTOs the **singular**
 
 ### Files, folders, tests
 
-| Element   | Case                                | Example                                 |
-| --------- | ----------------------------------- | --------------------------------------- |
-| File      | `kebab-case.role.ts`                | `sheet-recipients.service.ts`           |
-| Folder    | `kebab-case`, plural for a module   | `modules/sheet-recipients/`             |
-| Unit test | `*.spec.ts`, next to the file       | `students.service.spec.ts`              |
-| E2E test  | `test/*.e2e-spec.ts`                | `students.e2e-spec.ts`                  |
-| Test name | a sentence describing the behaviour | `it('rejects a duplicate internal id')` |
+| Element   | Case                                | Example                                                                  |
+| --------- | ----------------------------------- | ------------------------------------------------------------------------ |
+| File      | `kebab-case.role.ts`                | `sheet-recipients.service.ts`, `user-role.enum.ts`, `clock.interface.ts` |
+| Folder    | `kebab-case`, plural for a module   | `modules/sheet-recipients/`                                              |
+| Unit test | `*.spec.ts`, next to the file       | `students.service.spec.ts`                                               |
+| E2E test  | `test/*.e2e-spec.ts`                | `students.e2e-spec.ts`                                                   |
+| Test name | a sentence describing the behaviour | `it('rejects a duplicate internal id')`                                  |
 
 ### HTTP API
 

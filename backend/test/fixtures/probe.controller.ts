@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { Expose } from 'class-transformer';
 import { IsNotEmpty, IsString, Matches } from 'class-validator';
+import { Public } from '@shared/decorators/public.decorator.js';
 import { Serialize } from '@shared/decorators/serialize.decorator.js';
 import { PaginatedResult } from '@shared/dto/paginated-result.js';
 import { PaginationQueryDto } from '@shared/dto/pagination-query.dto.js';
@@ -38,6 +39,7 @@ class ProbeResponseDto {
 }
 
 /** Test-only endpoints exercising the HTTP contract. */
+@Public()
 @Controller('probe')
 export class ProbeController {
   @Get('missing/:probeId')

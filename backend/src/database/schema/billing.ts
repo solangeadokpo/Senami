@@ -1,4 +1,6 @@
 import { sql } from 'drizzle-orm';
+import { PaymentStatus } from '@shared/enums/payment-status.enum.js';
+import { SubscriptionStatus } from '@shared/enums/subscription-status.enum.js';
 import {
   boolean,
   char,
@@ -14,7 +16,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
-import { createdAt, id, timestamptz, updatedAt } from './columns.js';
+import { createdAt, id, timestamptz, updatedAt, sqlValue } from './columns.js';
 import { paymentStatus, subscriptionStatus } from './enums.js';
 import { establishments } from './establishments.js';
 import { tenantIsolation } from './policies.js';
@@ -111,21 +113,21 @@ export const subscriptions = pgTable(
     // One subscription in force per establishment.
     uniqueIndex('subscriptions_one_current_uq')
       .on(t.establishmentId)
-      .where(sql`status <> 'cancelled'`),
+      .where(sql`status <> ${sqlValue(SubscriptionStatus.CANCELLED)}`),
     index('subscriptions_period_end_idx')
       .on(t.currentPeriodEnd)
-      .where(sql`status <> 'cancelled'`),
+      .where(sql`status <> ${sqlValue(SubscriptionStatus.CANCELLED)}`),
     check(
       'subscriptions_suspension_reason_check',
       sql`suspension_reason IN ('payment_failed', 'manual')`,
     ),
     check(
       'subscriptions_suspended_check',
-      sql`status <> 'suspended' OR suspended_at IS NOT NULL`,
+      sql`status <> ${sqlValue(SubscriptionStatus.SUSPENDED)} OR suspended_at IS NOT NULL`,
     ),
     check(
       'subscriptions_cancelled_check',
-      sql`status <> 'cancelled' OR cancelled_at IS NOT NULL`,
+      sql`status <> ${sqlValue(SubscriptionStatus.CANCELLED)} OR cancelled_at IS NOT NULL`,
     ),
   ],
 );
@@ -172,7 +174,7 @@ export const payments = pgTable(
     check('payments_refunded_amount_check', sql`refunded_amount_cents >= 0`),
     check(
       'payments_succeeded_check',
-      sql`status <> 'succeeded' OR paid_at IS NOT NULL`,
+      sql`status <> ${sqlValue(PaymentStatus.SUCCEEDED)} OR paid_at IS NOT NULL`,
     ),
   ],
 );
