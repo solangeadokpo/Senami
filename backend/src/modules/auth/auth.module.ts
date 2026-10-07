@@ -3,7 +3,9 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { type AuthConfig, authConfig } from '@config/index.js';
+import { AuditModule } from '@modules/audit/audit.module.js';
 import { AuthController } from './controllers/auth.controller.js';
+import { ChannelsGuard } from './guards/channels.guard.js';
 import { AuthGuard } from './guards/auth.guard.js';
 import { AUTH_REPOSITORY } from './repositories/auth.repository.js';
 import { DrizzleAuthRepository } from './repositories/auth.repository.drizzle.js';
@@ -17,6 +19,7 @@ import { TokenService } from './services/token.service.js';
 
 @Module({
   imports: [
+    AuditModule,
     JwtModule.registerAsync({
       inject: [authConfig.KEY],
       useFactory: (config: AuthConfig) => ({
@@ -36,9 +39,10 @@ import { TokenService } from './services/token.service.js';
     PasswordHasherService,
     LoginThrottlerGuard,
     { provide: AUTH_REPOSITORY, useClass: DrizzleAuthRepository },
-    // Order matters: authentication first, then the role check.
+    // Order matters: authentication first, then the role and channel checks.
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_GUARD, useClass: ChannelsGuard },
   ],
   exports: [PasswordHasherService],
 })

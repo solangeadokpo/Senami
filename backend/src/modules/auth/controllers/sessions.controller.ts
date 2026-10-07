@@ -1,4 +1,5 @@
 import { UserRole } from '@shared/enums/user-role.enum.js';
+import { SessionChannel } from '@shared/enums/session-channel.enum.js';
 import {
   Controller,
   Delete,
@@ -9,7 +10,10 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { AuthenticatedUser } from '@shared/interfaces/authenticated-user.interface.js';
+import { Channels } from '@shared/decorators/channels.decorator.js';
+import { ClientInfo } from '@shared/decorators/client-info.decorator.js';
 import { CurrentUser } from '@shared/decorators/current-user.decorator.js';
+import type { ClientDetails } from '@shared/interfaces/client-details.interface.js';
 import { Roles } from '@shared/decorators/roles.decorator.js';
 import {
   ApiDataResponse,
@@ -52,12 +56,14 @@ export class SessionsController {
 
   @Delete('users/:userId/sessions')
   @Roles(UserRole.RESPONSABLE, UserRole.SUPER_ADMIN)
+  @Channels(SessionChannel.BACKOFFICE)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiErrorResponses(400, 401, 403, 404)
   async revokeAllOfUser(
     @CurrentUser() user: AuthenticatedUser,
     @Param() params: UserIdParamDto,
+    @ClientInfo() client: ClientDetails,
   ): Promise<void> {
-    await this.sessions.revokeAllOfUser(user, params.userId);
+    await this.sessions.revokeAllOfUser(user, params.userId, client);
   }
 }

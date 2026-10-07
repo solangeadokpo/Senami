@@ -3,7 +3,8 @@ import { SubscriptionStatus } from '@shared/enums/subscription-status.enum.js';
 import { SessionChannel } from '@shared/enums/session-channel.enum.js';
 import { Inject, Injectable } from '@nestjs/common';
 import { type SQL, and, desc, eq, gt, isNull, ne } from 'drizzle-orm';
-import { DRIZZLE, type Database } from '@core/database/index.js';
+import { DRIZZLE, type Database, executorOf } from '@core/database/index.js';
+import type { TransactionScope } from '@shared/interfaces/unit-of-work.interface.js';
 import {
   authSessions,
   establishments,
@@ -118,8 +119,11 @@ export class DrizzleAuthRepository implements AuthRepository {
     return this.findSession(eq(authSessions.previousRefreshTokenHash, hash));
   }
 
-  async createSession(session: NewSession): Promise<StoredSession> {
-    const [created] = await this.db
+  async createSession(
+    session: NewSession,
+    scope?: TransactionScope,
+  ): Promise<StoredSession> {
+    const [created] = await executorOf(this.db, scope)
       .insert(authSessions)
       .values({ ...session, lastUsedAt: session.createdAt })
       .returning(sessionColumns);
@@ -170,21 +174,22 @@ export class DrizzleAuthRepository implements AuthRepository {
   async revokeUserSessions(
     userId: string,
     revocation: Revocation,
-    deviceId?: string,
+    filter: { deviceId?: string; channel?: SessionChannel } = {},
+    scope?: TransactionScope,
   ): Promise<number> {
-    const revoked = await this.db
+    const revoked = await executorOf(this.db, scope)
       .update(authSessions)
       .set(revocationValues(revocation))
       .where(
         and(
           eq(authSessions.userId, userId),
           isNull(authSessions.revokedAt),
-          deviceId === undefined
+          filter.deviceId === undefined
             ? undefined
-            : and(
-                eq(authSessions.deviceId, deviceId),
-                eq(authSessions.channel, SessionChannel.MOBILE),
-              ),
+            : eq(authSessions.deviceId, filter.deviceId),
+          filter.channel === undefined
+            ? undefined
+            : eq(authSessions.channel, filter.channel),
         ),
       )
       .returning({ id: authSessions.id });
@@ -208,8 +213,12 @@ export class DrizzleAuthRepository implements AuthRepository {
       .orderBy(desc(authSessions.lastUsedAt));
   }
 
-  async recordLogin(userId: string, at: Date): Promise<void> {
-    await this.db
+  async recordLogin(
+    userId: string,
+    at: Date,
+    scope?: TransactionScope,
+  ): Promise<void> {
+    await executorOf(this.db, scope)
       .update(users)
       .set({ lastLoginAt: at })
       .where(eq(users.id, userId));

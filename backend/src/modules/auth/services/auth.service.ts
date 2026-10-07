@@ -84,7 +84,7 @@ export class AuthService {
     await this.repository.revokeUserSessions(
       account.userId,
       { at: now, by: account.userId, reason: 'replaced_on_device' },
-      input.device.id,
+      { deviceId: input.device.id, channel: SessionChannel.MOBILE },
     );
 
     const refreshToken = this.tokens.generateRefreshToken();

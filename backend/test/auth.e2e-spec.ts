@@ -7,7 +7,10 @@ import type { INestApplication } from '@nestjs/common';
 import type { DestinationStream } from 'pino';
 import request from 'supertest';
 import type { App } from 'supertest/types.js';
+import { and, eq } from 'drizzle-orm';
 import { DRIZZLE, type Database } from '@core/database/index.js';
+import { auditLogs } from '@database/schema/index.js';
+import { AuditAction } from '@shared/enums/audit-action.enum.js';
 import { isRecord } from '@shared/utils/is-record.js';
 import { createTestApp } from './app.js';
 import {
@@ -170,16 +173,50 @@ describe('authentication and sessions', () => {
       role: UserRole.RESPONSABLE,
     });
     const intervenant = await createUser(db, { establishmentId });
-    const admin = await signIn(responsable.email);
+    const cookie = await createBackofficeSession(db, responsable.id);
     const target = await signIn(intervenant.email);
 
     await request(app.getHttpServer())
       .delete(`/api/v1/users/${intervenant.id}/sessions`)
-      .set('Authorization', `Bearer ${admin.accessToken}`)
+      .set('Cookie', `senami_session=${cookie}`)
+      .set('Origin', ALLOWED_ORIGIN)
       .expect(204);
 
     const response = await me(target.accessToken).expect(401);
     expect(response.body).toMatchObject({ error: { code: 'SESSION_REVOKED' } });
+    const [entry] = await db
+      .select()
+      .from(auditLogs)
+      .where(
+        and(
+          eq(auditLogs.action, AuditAction.SESSIONS_REVOKED),
+          eq(auditLogs.targetId, intervenant.id),
+        ),
+      );
+    expect(entry).toMatchObject({
+      actorUserId: responsable.id,
+      actorRole: UserRole.RESPONSABLE,
+      establishmentId,
+      details: { revokedSessions: 1 },
+    });
+  });
+
+  it('refuses the revocation of others from the mobile app', async () => {
+    const establishmentId = await createEstablishment(db);
+    const responsable = await createUser(db, {
+      establishmentId,
+      role: UserRole.RESPONSABLE,
+    });
+    const intervenant = await createUser(db, { establishmentId });
+    const { accessToken } = await signIn(responsable.email);
+
+    const response = await request(app.getHttpServer())
+      .delete(`/api/v1/users/${intervenant.id}/sessions`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(403);
+    expect(response.body).toMatchObject({
+      error: { code: 'CHANNEL_NOT_ALLOWED' },
+    });
   });
 
   it('hides the users of another establishment from a responsable', async () => {
@@ -190,11 +227,12 @@ describe('authentication and sessions', () => {
     const stranger = await createUser(db, {
       establishmentId: await createEstablishment(db),
     });
-    const admin = await signIn(responsable.email);
+    const cookie = await createBackofficeSession(db, responsable.id);
 
     const response = await request(app.getHttpServer())
       .delete(`/api/v1/users/${stranger.id}/sessions`)
-      .set('Authorization', `Bearer ${admin.accessToken}`)
+      .set('Cookie', `senami_session=${cookie}`)
+      .set('Origin', ALLOWED_ORIGIN)
       .expect(404);
     expect(response.body).toMatchObject({ error: { code: 'USER_NOT_FOUND' } });
   });
