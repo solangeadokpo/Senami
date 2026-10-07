@@ -1,0 +1,106 @@
+# Local stack: PostgreSQL, the migrations, the API and the web app.
+#
+#   docker compose up -d --build --wait     the whole stack, from the root
+#   pnpm db:up (in backend/)                PostgreSQL only, for `pnpm start:dev`
+#                                           and the e2e suites
+#
+# Host ports are bound to 127.0.0.1. PostgreSQL uses 5433 so it does not
+# collide with a native instance. The project name is fixed: the stack is the
+# same whatever the folder or worktree it is started from.
+
+name: senami
+
+# Hardening shared by the images: nothing to write, no privilege to gain.
+x-hardening: &hardening
+  read_only: true
+  tmpfs:
+    - /tmp
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+
+x-api-image: &api-image
+  <<: *hardening
+  image: senami-api:local
+  build:
+    context: ./backend
+    target: runtime
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: senami-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - senami-pgdata:/var/lib/postgresql/data
+      - ./backend/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  # One-off: applies pending migrations, then exits. The API waits for it.
+  migrate:
+    <<: *api-image
+    container_name: senami-migrate
+    command: ["node", "--enable-source-maps", "dist/database/migrate.js"]
+    environment:
+      DATABASE_URL: postgres://senami_app:senami_app@postgres:5432/senami
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    <<: *api-image
+    container_name: senami-api
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      LOG_LEVEL: log
+      CORS_ORIGINS: http://localhost:3001,http://app.localhost:3001
+      DATABASE_URL: postgres://senami_app:senami_app@postgres:5432/senami
+      # Local stack only. Any other environment gets its own secret.
+      JWT_SECRET: local-docker-only-secret-never-use-elsewhere-0123
+    ports:
+      - "127.0.0.1:${API_PORT:-3000}:3000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  # Showcase site on http://localhost:3001, back office on
+  # http://app.localhost:3001. The URLs are built into the image.
+  web:
+    <<: *hardening
+    image: senami-web:local
+    container_name: senami-web
+    build:
+      context: ./web
+      target: runtime
+      args: &web-urls
+        API_URL: http://api:3000
+        NEXT_PUBLIC_SITE_URL: http://localhost:3001
+        NEXT_PUBLIC_APP_URL: http://app.localhost:3001
+    environment: *web-urls
+    tmpfs:
+      - /tmp
+      # Next.js writes its fetch and image caches here.
+      - /app/.next/cache
+    ports:
+      - "127.0.0.1:3001:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  senami-pgdata:
+    name: senami-pgdata

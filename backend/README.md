@@ -48,7 +48,7 @@ chooses their own values.
 again at any time: it creates what is missing and never changes an existing
 account, so changing a `SEED_*` password afterwards has no effect on an
 account already created (drop the database volume with `docker compose down -v`
-to start over).
+at the repository root to start over).
 
 | Account             | Email                         | Password                         | Can sign in on             |
 | ------------------- | ----------------------------- | -------------------------------- | -------------------------- |
@@ -90,19 +90,16 @@ compiled code, the production dependencies and the migrations only; it runs
 as the unprivileged `node` user behind `tini`, with a health check on
 `/health/live`.
 
+The local stack is described in the
+[`docker-compose.yml`](../docker-compose.yml) at the repository root, shared
+with the web app (see the [root README](../README.md#docker)). The scripts
+below act on the API part of it:
+
 ```bash
 pnpm docker:up       # PostgreSQL, migrations, then the API on localhost:3000
 pnpm docker:logs
 pnpm docker:down
 ```
-
-The compose stack has three services:
-
-| Service    | Role                                                                |
-| ---------- | ------------------------------------------------------------------- |
-| `postgres` | PostgreSQL 16, port 5433 on the host                                |
-| `migrate`  | one-off: applies pending migrations, then exits                     |
-| `api`      | the API, started once `migrate` has succeeded; read-only filesystem |
 
 The API runs with `NODE_ENV=production` in the stack, so the OpenAPI
 documentation is off: use `pnpm start:dev` for day-to-day work. Change the
@@ -128,12 +125,12 @@ docker run --rm -e DATABASE_URL=... senami-api node dist/database/migrate.js
 | `pnpm lint` / `lint:fix`         | ESLint with type information                           |
 | `pnpm typecheck`                 | `tsc --noEmit`                                         |
 | `pnpm format`                    | Prettier                                               |
-| `pnpm db:up` / `db:down`         | start / stop the local PostgreSQL                      |
+| `pnpm db:up` / `db:down`         | start / stop the local PostgreSQL (root compose file)  |
 | `pnpm db:generate`               | create a migration from the schema diff                |
 | `pnpm db:migrate`                | apply pending migrations                               |
 | `pnpm db:migrate:test`           | apply pending migrations to the test database          |
 | `pnpm db:migrate:prod`           | apply migrations from the build (no drizzle-kit)       |
-| `pnpm docker:up` / `docker:down` | start / stop the whole stack in Docker                 |
+| `pnpm docker:up` / `docker:down` | start / stop PostgreSQL, migrations and the API        |
 | `pnpm db:seed`                   | seed super admin and demo data (`:bootstrap`, `:demo`) |
 | `pnpm db:studio`                 | browse the database (Drizzle Studio)                   |
 

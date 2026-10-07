@@ -1,0 +1,6 @@
+# pnpm settings for this project (no workspace: the web app is standalone).
+# Install scripts are denied by default. None of these needs one: they ship
+# their native binaries as optional dependencies.
+allowBuilds:
+  sharp: false
+  unrs-resolver: false
