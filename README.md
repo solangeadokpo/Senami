@@ -23,7 +23,7 @@ dependencies, lockfile, formatting, linting and documentation.
 ```
 .
 ├── backend/          API (NestJS, Drizzle ORM, PostgreSQL)
-├── web/              showcase site and back office (to come)
+├── web/              showcase site and back office (Next.js)
 ├── mobile/           mobile app (to come)
 ├── .husky/           git hooks, shared by every project
 └── CONTRIBUTING.md   branches, commits, pull requests
@@ -41,16 +41,18 @@ pnpm install          # at the root: installs the git hooks
 cd backend && pnpm install
 ```
 
-Then follow the README of the project:
-[`backend/README.md`](backend/README.md).
+Then follow the README of each project:
+[`backend/README.md`](backend/README.md), then
+[`web/README.md`](web/README.md), which needs the API running.
 
 ## Documentation
 
-| Document                                                       | What                                  |
-| -------------------------------------------------------------- | ------------------------------------- |
-| [`CONTRIBUTING.md`](CONTRIBUTING.md)                           | branches, commits, hooks, reviews     |
-| [`backend/docs/conventions.md`](backend/docs/conventions.md)   | backend structure and practices       |
-| [`backend/docs/database.md`](backend/docs/database.md)         | data model                            |
+| Document                                                     | What                              |
+| ------------------------------------------------------------ | --------------------------------- |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md)                         | branches, commits, hooks, reviews |
+| [`backend/docs/conventions.md`](backend/docs/conventions.md) | backend structure and practices   |
+| [`backend/docs/database.md`](backend/docs/database.md)       | data model                        |
+| [`web/docs/conventions.md`](web/docs/conventions.md)         | web structure and practices       |
 
 ## License
 
