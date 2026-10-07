@@ -41,6 +41,10 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // A self-contained server for the Docker image: only the files it needs.
+  output: 'standalone',
+  // The build checks the application code only, as the backend does.
+  typescript: { tsconfigPath: 'tsconfig.build.json' },
   poweredByHeader: false,
   reactStrictMode: true,
   typedRoutes: true,

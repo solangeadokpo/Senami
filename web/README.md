@@ -41,15 +41,16 @@ the `CORS_ORIGINS` of `backend/.env.example`; add it to your own
 
 ## Scripts
 
-| Script                        | What                                                                 |
-| ----------------------------- | -------------------------------------------------------------------- |
-| `pnpm dev`                    | development server on port 3001                                      |
-| `pnpm build`, `pnpm start`    | production build and server                                          |
-| `pnpm typecheck`, `pnpm lint` | TypeScript, ESLint                                                   |
-| `pnpm format`                 | Prettier (with the Tailwind class order)                             |
-| `pnpm test`                   | unit and component tests (Vitest, Testing Library)                   |
-| `pnpm test:e2e`               | builds with test URLs, starts on port 3101, runs Playwright          |
-| `pnpm api:types`              | regenerates `src/core/api/schema.d.ts` from the API OpenAPI document |
+| Script                           | What                                                                 |
+| -------------------------------- | -------------------------------------------------------------------- |
+| `pnpm dev`                       | development server on port 3001                                      |
+| `pnpm build`, `pnpm start`       | production build and server                                          |
+| `pnpm typecheck`, `pnpm lint`    | TypeScript, ESLint                                                   |
+| `pnpm format`                    | Prettier (with the Tailwind class order)                             |
+| `pnpm test`                      | unit and component tests (Vitest, Testing Library)                   |
+| `pnpm test:e2e`                  | builds with test URLs, starts on port 3101, runs Playwright          |
+| `pnpm docker:up` / `docker:down` | the web app in the local Docker stack                                |
+| `pnpm api:types`                 | regenerates `src/core/api/schema.d.ts` from the API OpenAPI document |
 
 The first `pnpm test:e2e` needs the browser: `pnpm exec playwright install
 chromium`. It rebuilds `.next` with test URLs: run `pnpm build` again before
@@ -59,6 +60,21 @@ chromium`. It rebuilds `.next` with test URLs: run `pnpm build` again before
 API outside production (`pnpm start:dev` in `backend/`). Another address:
 `API_DOCS_URL=http://localhost:3010/api/docs-json pnpm api:types`. Commit the
 regenerated file with the change that needs it.
+
+## Docker
+
+The [`Dockerfile`](Dockerfile) builds a standalone Next.js server; it runs as
+the unprivileged `node` user behind `tini`, with a read-only filesystem. The
+URLs are build arguments, since Next.js writes them into the bundle. In the
+local stack (root [`docker-compose.yml`](../docker-compose.yml)), the `web`
+service serves http://localhost:3001 and http://app.localhost:3001 and calls
+the `api` service:
+
+```bash
+pnpm docker:up       # PostgreSQL, migrations, API, then the web app
+pnpm docker:logs
+pnpm docker:down
+```
 
 ## Layout
 

@@ -21,6 +21,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "docker:build": "docker compose -f ../docker-compose.yml build web",
+    "docker:up": "docker compose -f ../docker-compose.yml up -d --build --wait web",
+    "docker:down": "docker compose -f ../docker-compose.yml stop web",
+    "docker:logs": "docker compose -f ../docker-compose.yml logs -f web",
     "api:types": "openapi-typescript ${API_DOCS_URL:-http://localhost:3000/api/docs-json} -o src/core/api/schema.d.ts && prettier --write src/core/api/schema.d.ts"
   },
   "dependencies": {
