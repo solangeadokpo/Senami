@@ -119,15 +119,93 @@ API spec it relies on, in `backend/docs/features/`.
 
 ## User interface
 
-- Components from [shadcn/ui](https://ui.shadcn.com), copied into
+The Sènami graphic charter (v1.0) is the authority; its rules are cited by
+id (`C-04`, `I-01`). This section is how the code applies it.
+
+### Brand
+
+- The name is written **Sènami**, accent included, in every text users read.
+- The logo comes from the kit files in `public/brand/`, through
+  `<Logo variant width />` (`@shared/components/brand/logo`). It is never
+  typed in a font (L-01) nor recoloured. `primary` on white, `inverse` on
+  indigo 900 or 950, `signature` where Sènami is met for the first time (sign-
+  in page, 200 px wide at least), `badge` alone under 88 px (L-13).
+- Favicon, Apple icon and the web manifest come from the kit: `app/icon.svg`,
+  `app/icon1.png` (32), `app/icon2.png` (16), `app/apple-icon.png` (180),
+  `public/icons/` (192, 512, maskable 512), `app/manifest.ts`.
+- Fonts are in `app/fonts/` and declared in `globals.css`, served by the app
+  (N-09): Poppins for titles (`font-display`, applied to `h1` to `h3`),
+  Manrope for everything else (`font-sans`). Both under the SIL Open Font
+  License 1.1.
+- Light theme only (N-10).
+
+### Colours
+
+Tailwind's default palette is removed: only the charter colours have classes.
+
+| Class prefix                              | Charter            | Use                                                                    |
+| ----------------------------------------- | ------------------ | ---------------------------------------------------------------------- |
+| `indigo-50` to `indigo-950`               | Indigo             | 900 is the brand indigo: titles, action button; 600: links (C-10)      |
+| `coral-50` to `coral-700`                 | Corail             | the accent, **one coral element per view** (C-05); 600 for text (C-03) |
+| `slate-50` to `slate-900`                 | Ardoise            | 50 to 300 surfaces and rules, 600 and darker for text (C-11)           |
+| `success`, `warning`, `error`, `info`     | États              | text and icon; `-surface` for the tinted background                    |
+| `primary`, `muted`, `border`, `ring`, ... | (shadcn/ui tokens) | what components use, mapped onto the scales above                      |
+
+- Never a raw colour (`#2e2a4d`, `bg-[...]`). Prefer the semantic tokens in
+  components, the scales in layouts.
+- The action button is indigo, never coral (C-04). A state never relies on
+  colour alone: icon and label (I-05).
+- Check a text and background pair against the contrast matrix of the
+  charter; indigo 400 and 500, slate 400 and 500 and coral 500 never carry
+  running text.
+
+### Type, spacing, shapes
+
+- Type scale of the charter: `text-display`, `text-title` (h2),
+  `text-subtitle` (h3), `text-body`, `text-value` (with `tabular-nums`),
+  `text-label` and `text-overline` (with `uppercase`), `text-mention`. Two
+  weights per view at most (T-01), no italic (T-02).
+- Spacing is a multiple of 4 px: no `*-1.5`, `*-2.5`, `*-3.5` (6, 10, 14 px
+  do not exist).
+- Radii: `rounded-xs` (2), `rounded-lg` (8), `rounded-xl` (12, cards and
+  fields), `rounded-2xl` (16), `rounded-3xl` (24), `rounded-full` (buttons,
+  badges). The others are removed.
+- Page margins: `page-gutter` (20, 32, 48 px); content width on a wide
+  screen: `max-w-content` (1120 px).
+- Back office and app: rounded, one soft shadow for floating cards and
+  dialogs only (S-01). Showcase site: sharp corners, white dominant, a coral
+  rule opens each content block.
+
+### Components
+
+- From [shadcn/ui](https://ui.shadcn.com), copied into
   `shared/components/ui/` and owned by the project:
-  `pnpm dlx shadcn@latest add dialog` (aliases in `components.json`).
-- Colours, radius and font are tokens in `globals.css`. Use the token classes
-  (`bg-primary`, `text-muted-foreground`), never a raw colour. The palette is
-  provisional until the brand colours arrive.
-- Icons from `lucide-react`.
-- Accessibility: semantic elements first (`button`, `a`, `nav`, headings in
-  order), keyboard reachable, visible focus, contrast at least 4.5:1.
+  `pnpm dlx shadcn@latest add dialog` (aliases in `components.json`), then
+  restyled to the charter.
+- Buttons (I-01, I-02, S-02): `default` (indigo, one per screen), `outline`
+  (secondary), `link` (discreet), `destructive` (after confirmation only),
+  `ghost` (closing a dialog). Sizes 44, 52, 56 px: `default`, `lg`, `xl`. A
+  label is a verb and its object, never "OK" nor "Valider" (T-11), and no
+  arrow.
+- Fields (I-03): `Label` above, hint below, the error in place of the hint;
+  `aria-invalid` on the field.
+- Icons from `lucide-react`, outline at a 1.75 stroke (set globally),
+  `currentColor`, 16 to 24 px, always with a visible or accessible label
+  (S-06 to S-09).
+- Dialogs for three cases only: confirming, a failure, abandoning (I-06).
+
+### Wording
+
+French, formal "vous", no exclamation mark, no emoji, no promise (T-10 to
+T-15). The official vocabulary: _accident bénin_, _le blessé_, _intervenant_,
+_fiche_, _déclarer_, _transmettre_, _établissement_. The word "enregistré" is
+never used: Sènami keeps nothing (I-07).
+
+### Accessibility
+
+Semantic elements first (`button`, `a`, `nav`, headings in order), keyboard
+reachable, visible focus, 44 px touch targets, contrast from the charter
+matrix (4.5:1 for running text).
 
 ## Security and personal data
 

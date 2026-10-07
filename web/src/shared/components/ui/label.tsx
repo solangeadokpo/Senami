@@ -4,6 +4,7 @@ import { Label as LabelPrimitive } from 'radix-ui';
 import type { ComponentProps } from 'react';
 import { cn } from '@shared/utils/cn';
 
+/** The charter field label: spaced capitals, above the field. */
 export function Label({
   className,
   ...props
@@ -12,7 +13,7 @@ export function Label({
     <LabelPrimitive.Root
       data-slot="label"
       className={cn(
-        'text-sm leading-none font-medium select-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50',
+        'text-label text-slate-700 uppercase select-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50',
         className,
       )}
       {...props}

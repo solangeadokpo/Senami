@@ -17,9 +17,9 @@ export default function GlobalError({
             textAlign: 'center',
           }}
         >
-          <h1>Une erreur est survenue</h1>
+          <h1>La page n’a pas pu s’afficher</h1>
           <button type="button" onClick={reset}>
-            Réessayer
+            Recharger la page
           </button>
         </main>
       </body>

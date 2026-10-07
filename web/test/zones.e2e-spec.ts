@@ -7,7 +7,10 @@ test('serves the showcase site, indexable', async ({ page }) => {
   const response = await page.goto(SITE_URL);
 
   expect(response?.status()).toBe(200);
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Senami');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+    'Déclarer un accident bénin',
+  );
+  await expect(page.getByRole('img', { name: 'Sènami' })).toBeVisible();
   expect(response?.headers()['x-robots-tag']).toBeUndefined();
 });
 

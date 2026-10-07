@@ -5,9 +5,11 @@ import { Button } from './button';
 describe('Button', () => {
   it('is a button that reacts to a click', async () => {
     const onClick = vi.fn();
-    render(<Button onClick={onClick}>Enregistrer</Button>);
+    render(<Button onClick={onClick}>Transmettre la fiche</Button>);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Transmettre la fiche' }),
+    );
 
     expect(onClick).toHaveBeenCalledOnce();
   });

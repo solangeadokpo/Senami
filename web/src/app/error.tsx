@@ -2,6 +2,7 @@
 
 import { Button } from '@shared/components/ui/button';
 
+// T-13: name what failed and the action to take again, no apology.
 export default function ErrorPage({
   reset,
 }: {
@@ -9,12 +10,14 @@ export default function ErrorPage({
   reset: () => void;
 }) {
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-4 px-4 text-center">
-      <h1 className="text-2xl font-semibold">Une erreur est survenue</h1>
+    <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-4 page-gutter text-center">
+      <h1 className="text-title text-indigo-900">
+        La page n’a pas pu s’afficher
+      </h1>
       <p className="text-muted-foreground">
-        Réessayez dans un instant. Si le problème persiste, contactez-nous.
+        Rechargez la page dans un instant.
       </p>
-      <Button onClick={reset}>Réessayer</Button>
+      <Button onClick={reset}>Recharger la page</Button>
     </main>
   );
 }

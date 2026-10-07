@@ -1,13 +1,15 @@
 import type { ComponentProps } from 'react';
 import { cn } from '@shared/utils/cn';
 
+// I-03: the label above (Label), the hint below, the error in place of the
+// hint. `aria-invalid` turns the border to the error colour.
 export function Input({ className, type, ...props }: ComponentProps<'input'>) {
   return (
     <input
       type={type}
       data-slot="input"
       className={cn(
-        'h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs outline-none placeholder:text-muted-foreground focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive md:text-sm',
+        'h-11 w-full min-w-0 rounded-xl border border-input bg-background px-4 text-base font-medium text-foreground outline-none placeholder:font-normal placeholder:text-muted-foreground focus-visible:border-indigo-600 focus-visible:ring-3 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-60 aria-invalid:border-error aria-invalid:ring-error/20',
         className,
       )}
       {...props}
