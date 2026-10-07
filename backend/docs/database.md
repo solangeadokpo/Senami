@@ -183,6 +183,30 @@ values are typed the same way and checked from their enum: `auth_sessions.platfo
 (`RegistrationActorKind`). Adding a value is a schema change: edit the enum,
 then `pnpm db:generate`.
 
+## Seeding
+
+Seeders create what is missing and never change what exists: they can run
+again safely ([spec](features/database/seeders.md)).
+
+| Level       | Creates                                                                                                                         | Where               |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| `bootstrap` | the first super administrator                                                                                                   | every environment   |
+| `demo`      | yearly plan, demo establishment (`is_demo`), its subscription, a responsable, an intervenant, a `to` recipient, useful contacts | never in production |
+
+```bash
+pnpm db:seed              # all, from the sources (development)
+pnpm db:seed:bootstrap
+pnpm db:seed:demo
+# any other environment, after the migrations, with the API image:
+docker run --rm -e DATABASE_URL=... -e SEED_SUPER_ADMIN_EMAIL=... \
+  -e SEED_SUPER_ADMIN_PASSWORD=... senami-api node dist/database/seeds/seed.js bootstrap
+```
+
+Passwords come from `SEED_SUPER_ADMIN_PASSWORD` and `SEED_DEMO_PASSWORD`
+(12 characters at least), never from the code, and never reach the logs.
+A new seeder implements `Seeder` in `src/database/seeds/seeders/` and is
+listed in `seedersFor()`.
+
 ## Changing the schema
 
 1. Edit the tables in `src/database/schema/`. Keys are camelCase, columns come

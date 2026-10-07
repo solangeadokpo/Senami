@@ -16,10 +16,59 @@ at the repository root for the git hooks, then in this folder:
 ```bash
 nvm use
 pnpm install
-cp .env.example .env
+cp .env.example .env  # then set the secrets: see "Environment" below
 pnpm db:up            # PostgreSQL 16 in Docker, on localhost:5433
 pnpm db:migrate       # schema, functions, row level security, reference data
+pnpm db:seed          # super admin and demo establishment: see "Test accounts"
 pnpm start:dev
+```
+
+### Environment
+
+`.env.example` holds placeholders. Before the first start, replace in `.env`:
+
+| Variable                    | What to put                                              |
+| --------------------------- | -------------------------------------------------------- |
+| `JWT_SECRET`                | a random value of 32 characters or more (command below)  |
+| `SEED_SUPER_ADMIN_EMAIL`    | the email of your local super administrator              |
+| `SEED_SUPER_ADMIN_PASSWORD` | its password, 12 characters or more                      |
+| `SEED_DEMO_PASSWORD`        | the password of the demo accounts, 12 characters or more |
+
+```bash
+node -e "console.log(require('node:crypto').randomBytes(48).toString('base64url'))"
+```
+
+The API refuses to start, and the seeds to run, while a variable is missing
+or too short: the error names it. `.env` is never committed; each developer
+chooses their own values.
+
+### Test accounts
+
+`pnpm db:seed` creates these accounts in your local database. It can run
+again at any time: it creates what is missing and never changes an existing
+account, so changing a `SEED_*` password afterwards has no effect on an
+account already created (drop the database volume with `docker compose down -v`
+to start over).
+
+| Account             | Email                         | Password                         | Can sign in on             |
+| ------------------- | ----------------------------- | -------------------------------- | -------------------------- |
+| Super administrator | your `SEED_SUPER_ADMIN_EMAIL` | your `SEED_SUPER_ADMIN_PASSWORD` | back office only           |
+| Responsable         | `responsable@demo.senami.fr`  | your `SEED_DEMO_PASSWORD`        | mobile app and back office |
+| Intervenant         | `intervenant@demo.senami.fr`  | your `SEED_DEMO_PASSWORD`        | mobile app only            |
+
+The responsable and the intervenant belong to the **École de démonstration
+Senami**, a demo establishment (`is_demo`) with an active yearly subscription,
+a sheet recipient and the SAMU, emergency and direction contacts: a
+declaration can be sent from it right away. The back office sign-in arrives
+with the second factor (F2); until then, the super administrator can only be
+used through the API tests.
+
+Sign in on the mobile app from the API:
+
+```bash
+curl -X POST http://localhost:3000/api/v1/auth/mobile/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"intervenant@demo.senami.fr","password":"<SEED_DEMO_PASSWORD>","device":{"id":"my-laptop","platform":"ios","appVersion":"1.0.0"}}'
 ```
 
 | URL                                | What                                      |
@@ -68,24 +117,25 @@ docker run --rm -e DATABASE_URL=... senami-api node dist/database/migrate.js
 
 ## Scripts
 
-| Script                           | What it does                                     |
-| -------------------------------- | ------------------------------------------------ |
-| `pnpm start:dev`                 | start with watch mode                            |
-| `pnpm build`                     | compile to `dist/`                               |
-| `pnpm start:prod`                | run the compiled build                           |
-| `pnpm test`                      | unit tests (no database)                         |
-| `pnpm test:e2e`                  | end-to-end tests (migrates `senami_test` first)  |
-| `pnpm test:cov`                  | unit tests with coverage                         |
-| `pnpm lint` / `lint:fix`         | ESLint with type information                     |
-| `pnpm typecheck`                 | `tsc --noEmit`                                   |
-| `pnpm format`                    | Prettier                                         |
-| `pnpm db:up` / `db:down`         | start / stop the local PostgreSQL                |
-| `pnpm db:generate`               | create a migration from the schema diff          |
-| `pnpm db:migrate`                | apply pending migrations                         |
-| `pnpm db:migrate:test`           | apply pending migrations to the test database    |
-| `pnpm db:migrate:prod`           | apply migrations from the build (no drizzle-kit) |
-| `pnpm docker:up` / `docker:down` | start / stop the whole stack in Docker           |
-| `pnpm db:studio`                 | browse the database (Drizzle Studio)             |
+| Script                           | What it does                                           |
+| -------------------------------- | ------------------------------------------------------ |
+| `pnpm start:dev`                 | start with watch mode                                  |
+| `pnpm build`                     | compile to `dist/`                                     |
+| `pnpm start:prod`                | run the compiled build                                 |
+| `pnpm test`                      | unit tests (no database)                               |
+| `pnpm test:e2e`                  | end-to-end tests (migrates `senami_test` first)        |
+| `pnpm test:cov`                  | unit tests with coverage                               |
+| `pnpm lint` / `lint:fix`         | ESLint with type information                           |
+| `pnpm typecheck`                 | `tsc --noEmit`                                         |
+| `pnpm format`                    | Prettier                                               |
+| `pnpm db:up` / `db:down`         | start / stop the local PostgreSQL                      |
+| `pnpm db:generate`               | create a migration from the schema diff                |
+| `pnpm db:migrate`                | apply pending migrations                               |
+| `pnpm db:migrate:test`           | apply pending migrations to the test database          |
+| `pnpm db:migrate:prod`           | apply migrations from the build (no drizzle-kit)       |
+| `pnpm docker:up` / `docker:down` | start / stop the whole stack in Docker                 |
+| `pnpm db:seed`                   | seed super admin and demo data (`:bootstrap`, `:demo`) |
+| `pnpm db:studio`                 | browse the database (Drizzle Studio)                   |
 
 ## Layout
 

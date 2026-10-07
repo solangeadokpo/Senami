@@ -1,6 +1,8 @@
 import {
   NodeEnv,
   validateEnvironment,
+  validateBootstrapSeedEnvironment,
+  validateDemoSeedEnvironment,
   validateScriptEnvironment,
 } from './env.validation.js';
 
@@ -64,6 +66,46 @@ describe('validateScriptEnvironment', () => {
   it('needs no API secret', () => {
     expect(validateScriptEnvironment({ DATABASE_URL }).DATABASE_URL).toBe(
       DATABASE_URL,
+    );
+  });
+});
+
+describe('seed environments', () => {
+  const SEED_SUPER_ADMIN_EMAIL = 'admin@example.com';
+  const STRONG_PASSWORD = 'a-password-of-12-or-more';
+
+  it('requires the super admin email and password for bootstrap', () => {
+    expect(() => validateBootstrapSeedEnvironment({ DATABASE_URL })).toThrow(
+      /SEED_SUPER_ADMIN_EMAIL[\s\S]*SEED_SUPER_ADMIN_PASSWORD/,
+    );
+  });
+
+  it('rejects a super admin password shorter than 12 characters', () => {
+    expect(() =>
+      validateBootstrapSeedEnvironment({
+        DATABASE_URL,
+        SEED_SUPER_ADMIN_EMAIL,
+        SEED_SUPER_ADMIN_PASSWORD: 'short',
+      }),
+    ).toThrow(/SEED_SUPER_ADMIN_PASSWORD/);
+  });
+
+  it('defaults the super admin name', () => {
+    const env = validateBootstrapSeedEnvironment({
+      DATABASE_URL,
+      SEED_SUPER_ADMIN_EMAIL,
+      SEED_SUPER_ADMIN_PASSWORD: STRONG_PASSWORD,
+    });
+
+    expect([
+      env.SEED_SUPER_ADMIN_FIRST_NAME,
+      env.SEED_SUPER_ADMIN_LAST_NAME,
+    ]).toEqual(['Super', 'Admin']);
+  });
+
+  it('requires the demo password for demo', () => {
+    expect(() => validateDemoSeedEnvironment({ DATABASE_URL })).toThrow(
+      /SEED_DEMO_PASSWORD/,
     );
   });
 });

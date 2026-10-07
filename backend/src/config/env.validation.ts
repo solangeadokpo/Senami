@@ -3,6 +3,7 @@
 import 'reflect-metadata';
 import { plainToInstance } from 'class-transformer';
 import {
+  IsEmail,
   IsEnum,
   IsInt,
   IsNotEmpty,
@@ -97,6 +98,31 @@ export class EnvironmentVariables extends ScriptEnvironment {
   MOBILE_SESSION_DAYS: number = 30;
 }
 
+/** `bootstrap` seed: the first super administrator. */
+export class BootstrapSeedEnvironment extends ScriptEnvironment {
+  @IsEmail()
+  SEED_SUPER_ADMIN_EMAIL: string;
+
+  @IsString()
+  @MinLength(12)
+  SEED_SUPER_ADMIN_PASSWORD: string;
+
+  @IsString()
+  @IsNotEmpty()
+  SEED_SUPER_ADMIN_FIRST_NAME: string = 'Super';
+
+  @IsString()
+  @IsNotEmpty()
+  SEED_SUPER_ADMIN_LAST_NAME: string = 'Admin';
+}
+
+/** `demo` seed: password shared by the demo responsable and intervenant. */
+export class DemoSeedEnvironment extends ScriptEnvironment {
+  @IsString()
+  @MinLength(12)
+  SEED_DEMO_PASSWORD: string;
+}
+
 function validate<T extends object>(
   target: new () => T,
   raw: Record<string, unknown>,
@@ -133,6 +159,18 @@ export function validateScriptEnvironment(
   raw: Record<string, unknown>,
 ): ScriptEnvironment {
   return validate(ScriptEnvironment, raw);
+}
+
+export function validateBootstrapSeedEnvironment(
+  raw: Record<string, unknown>,
+): BootstrapSeedEnvironment {
+  return validate(BootstrapSeedEnvironment, raw);
+}
+
+export function validateDemoSeedEnvironment(
+  raw: Record<string, unknown>,
+): DemoSeedEnvironment {
+  return validate(DemoSeedEnvironment, raw);
 }
 
 export function logSettings(e: ScriptEnvironment): {

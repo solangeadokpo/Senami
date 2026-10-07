@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm';
+import { BillingInterval } from '@shared/enums/billing-interval.enum.js';
 import { PaymentStatus } from '@shared/enums/payment-status.enum.js';
 import { SubscriptionStatus } from '@shared/enums/subscription-status.enum.js';
 import {
@@ -16,7 +17,14 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
-import { createdAt, id, timestamptz, updatedAt, sqlValue } from './columns.js';
+import {
+  createdAt,
+  id,
+  timestamptz,
+  updatedAt,
+  sqlValue,
+  sqlValues,
+} from './columns.js';
 import { paymentStatus, subscriptionStatus } from './enums.js';
 import { establishments } from './establishments.js';
 import { tenantIsolation } from './policies.js';
@@ -28,7 +36,7 @@ export const subscriptionPlans = pgTable(
     id: id(),
     code: text().notNull().unique(),
     name: text().notNull(),
-    billingInterval: text().notNull(),
+    billingInterval: text().$type<BillingInterval>().notNull(),
     intervalCount: smallint().notNull().default(1),
     // false: no longer offered to new subscriptions.
     isActive: boolean().notNull().default(true),
@@ -37,7 +45,7 @@ export const subscriptionPlans = pgTable(
   () => [
     check(
       'subscription_plans_billing_interval_check',
-      sql`billing_interval IN ('month', 'year')`,
+      sql`billing_interval IN (${sqlValues(Object.values(BillingInterval))})`,
     ),
     check('subscription_plans_interval_count_check', sql`interval_count > 0`),
   ],

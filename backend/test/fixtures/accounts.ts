@@ -1,3 +1,4 @@
+import { BillingInterval } from '@shared/enums/billing-interval.enum.js';
 import { EstablishmentType } from '@shared/enums/establishment-type.enum.js';
 import { DevicePlatform } from '@shared/enums/device-platform.enum.js';
 import { SubscriptionStatus } from '@shared/enums/subscription-status.enum.js';
@@ -41,7 +42,7 @@ export async function createEstablishment(
     .values({
       code: `e2e-${randomUUID()}`,
       name: 'Annuel',
-      billingInterval: 'year',
+      billingInterval: BillingInterval.YEAR,
     })
     .returning({ id: subscriptionPlans.id });
   if (establishment === undefined || plan === undefined) {

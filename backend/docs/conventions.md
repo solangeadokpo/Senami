@@ -288,7 +288,9 @@ if (user.role === UserRole.SUPER_ADMIN) {}
 @Roles(UserRole.RESPONSABLE)
 ```
 
-Every enum lives in `src/shared/enums/<name>.enum.ts`. In the Drizzle schema,
+Every domain enum lives in `src/shared/enums/<name>.enum.ts`. An enum that only
+one script or module uses stays next to it, with the same suffix
+(`database/seeds/seed-level.enum.ts`). In the Drizzle schema,
 a value inlined in a check constraint or a partial index goes through
 `sqlValue(UserStatus.ACTIVE)` or `sqlValues(Object.values(DevicePlatform))`,
 never a quoted string. In tests too: `status: UserStatus.DEACTIVATED`.
