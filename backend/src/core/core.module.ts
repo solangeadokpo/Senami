@@ -4,6 +4,7 @@ import { configurations, validateEnvironment } from '@config/index.js';
 import { DatabaseModule } from './database/database.module.js';
 import { HealthModule } from './health/health.module.js';
 import { LoggingModule } from './logging/logging.module.js';
+import { TimeModule } from './time/time.module.js';
 
 /**
  * Infrastructure holding state (config, logger, pool). Imported once, by AppModule.
@@ -19,6 +20,7 @@ import { LoggingModule } from './logging/logging.module.js';
       validate: validateEnvironment,
     }),
     LoggingModule,
+    TimeModule,
     DatabaseModule,
     HealthModule,
   ],

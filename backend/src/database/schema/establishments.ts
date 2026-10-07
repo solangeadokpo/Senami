@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm';
+import { EstablishmentStatus } from '@shared/enums/establishment-status.enum.js';
 import {
   boolean,
   check,
@@ -15,6 +16,7 @@ import {
   id,
   timestamptz,
   updatedAt,
+  sqlValue,
 } from './columns.js';
 import { establishmentStatus, establishmentType } from './enums.js';
 
@@ -33,7 +35,7 @@ export const establishments = pgTable(
     approxStudentCount: integer(),
     logo: bytea(),
     logoMimeType: text(),
-    status: establishmentStatus().notNull().default('active'),
+    status: establishmentStatus().notNull().default(EstablishmentStatus.ACTIVE),
     suspendedAt: timestamptz(),
     suspensionReason: text(),
     terminatedAt: timestamptz(),
@@ -61,11 +63,11 @@ export const establishments = pgTable(
     ),
     check(
       'establishments_suspended_check',
-      sql`status <> 'suspended' OR suspended_at IS NOT NULL`,
+      sql`status <> ${sqlValue(EstablishmentStatus.SUSPENDED)} OR suspended_at IS NOT NULL`,
     ),
     check(
       'establishments_terminated_check',
-      sql`status <> 'terminated' OR terminated_at IS NOT NULL`,
+      sql`status <> ${sqlValue(EstablishmentStatus.TERMINATED)} OR terminated_at IS NOT NULL`,
     ),
   ],
 );

@@ -3,6 +3,7 @@
 import 'reflect-metadata';
 import { plainToInstance } from 'class-transformer';
 import {
+  IsEmail,
   IsEnum,
   IsInt,
   IsNotEmpty,
@@ -11,6 +12,7 @@ import {
   Matches,
   Max,
   Min,
+  MinLength,
   validateSync,
 } from 'class-validator';
 
@@ -33,14 +35,30 @@ export enum LogLevel {
   ERROR = 'error',
 }
 
-/**
- * Contract for the environment variables, validated at startup.
- * Consumers inject a namespace (`appConfig`, `databaseConfig`), not this class.
- */
-export class EnvironmentVariables {
+/** What a script needs (migrations): no HTTP, no secret it does not use. */
+export class ScriptEnvironment {
   @IsEnum(NodeEnv)
   NODE_ENV: NodeEnv = NodeEnv.DEVELOPMENT;
 
+  @IsEnum(LogLevel)
+  LOG_LEVEL: LogLevel = LogLevel.LOG;
+
+  // Defaults to pretty in development, json elsewhere (see logSettings).
+  @IsEnum(LogFormat)
+  @IsOptional()
+  LOG_FORMAT?: LogFormat;
+
+  @Matches(/^postgres(ql)?:\/\//, {
+    message: 'DATABASE_URL must be a postgres:// connection string',
+  })
+  DATABASE_URL: string;
+}
+
+/**
+ * Contract for the environment variables of the API, validated at startup.
+ * Consumers inject a namespace (`appConfig`, `authConfig`...), not this class.
+ */
+export class EnvironmentVariables extends ScriptEnvironment {
   @IsInt()
   @Min(1)
   @Max(65535)
@@ -63,26 +81,53 @@ export class EnvironmentVariables {
   @IsOptional()
   CORS_ORIGINS: string = '';
 
-  @IsEnum(LogLevel)
-  LOG_LEVEL: LogLevel = LogLevel.LOG;
+  // Signs the access tokens. At least 32 characters of randomness.
+  @IsString()
+  @MinLength(32)
+  JWT_SECRET: string;
 
-  // Defaults to pretty in development, json elsewhere (see appConfig).
-  @IsEnum(LogFormat)
-  @IsOptional()
-  LOG_FORMAT?: LogFormat;
+  @IsInt()
+  @Min(1)
+  @Max(60)
+  ACCESS_TOKEN_TTL_MINUTES: number = 15;
 
-  @Matches(/^postgres(ql)?:\/\//, {
-    message: 'DATABASE_URL must be a postgres:// connection string',
-  })
-  DATABASE_URL: string;
+  // Sliding: a mobile session expires this many days after its last refresh.
+  @IsInt()
+  @Min(1)
+  @Max(365)
+  MOBILE_SESSION_DAYS: number = 30;
 }
 
-let cached: EnvironmentVariables | undefined;
+/** `bootstrap` seed: the first super administrator. */
+export class BootstrapSeedEnvironment extends ScriptEnvironment {
+  @IsEmail()
+  SEED_SUPER_ADMIN_EMAIL: string;
 
-export function validateEnvironment(
+  @IsString()
+  @MinLength(12)
+  SEED_SUPER_ADMIN_PASSWORD: string;
+
+  @IsString()
+  @IsNotEmpty()
+  SEED_SUPER_ADMIN_FIRST_NAME: string = 'Super';
+
+  @IsString()
+  @IsNotEmpty()
+  SEED_SUPER_ADMIN_LAST_NAME: string = 'Admin';
+}
+
+/** `demo` seed: password shared by the demo responsable and intervenant. */
+export class DemoSeedEnvironment extends ScriptEnvironment {
+  @IsString()
+  @MinLength(12)
+  SEED_DEMO_PASSWORD: string;
+}
+
+function validate<T extends object>(
+  target: new () => T,
   raw: Record<string, unknown>,
-): EnvironmentVariables {
-  const parsed = plainToInstance(EnvironmentVariables, raw, {
+): T {
+  const parsed = plainToInstance(target, raw, {
     enableImplicitConversion: true,
     exposeDefaultValues: true,
   });
@@ -98,8 +143,46 @@ export function validateEnvironment(
     );
   }
 
-  cached = parsed;
   return parsed;
+}
+
+let cached: EnvironmentVariables | undefined;
+
+export function validateEnvironment(
+  raw: Record<string, unknown>,
+): EnvironmentVariables {
+  cached = validate(EnvironmentVariables, raw);
+  return cached;
+}
+
+export function validateScriptEnvironment(
+  raw: Record<string, unknown>,
+): ScriptEnvironment {
+  return validate(ScriptEnvironment, raw);
+}
+
+export function validateBootstrapSeedEnvironment(
+  raw: Record<string, unknown>,
+): BootstrapSeedEnvironment {
+  return validate(BootstrapSeedEnvironment, raw);
+}
+
+export function validateDemoSeedEnvironment(
+  raw: Record<string, unknown>,
+): DemoSeedEnvironment {
+  return validate(DemoSeedEnvironment, raw);
+}
+
+export function logSettings(e: ScriptEnvironment): {
+  logLevel: LogLevel;
+  logFormat: LogFormat;
+} {
+  return {
+    logLevel: e.LOG_LEVEL,
+    logFormat:
+      e.LOG_FORMAT ??
+      (e.NODE_ENV === NodeEnv.DEVELOPMENT ? LogFormat.PRETTY : LogFormat.JSON),
+  };
 }
 
 /** Validated environment, for the `registerAs` factories. */

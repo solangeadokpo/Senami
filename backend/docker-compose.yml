@@ -60,6 +60,8 @@ services:
       LOG_LEVEL: log
       CORS_ORIGINS: http://localhost:3001
       DATABASE_URL: postgres://senami_app:senami_app@postgres:5432/senami
+      # Local stack only. Any other environment gets its own secret.
+      JWT_SECRET: local-docker-only-secret-never-use-elsewhere-0123
     ports:
       - '127.0.0.1:${API_PORT:-3000}:3000'
     depends_on:

@@ -1,4 +1,7 @@
 import { sql } from 'drizzle-orm';
+import { DemoStatus } from '@shared/enums/demo-status.enum.js';
+import { RegistrationActorKind } from '@shared/enums/registration-actor-kind.enum.js';
+import { RegistrationStatus } from '@shared/enums/registration-status.enum.js';
 import {
   bigint,
   check,
@@ -9,7 +12,15 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
-import { citext, createdAt, id, timestamptz, updatedAt } from './columns.js';
+import {
+  citext,
+  createdAt,
+  id,
+  timestamptz,
+  updatedAt,
+  sqlValue,
+  sqlValues,
+} from './columns.js';
 import { demoStatus, establishmentType, registrationStatus } from './enums.js';
 import { establishments } from './establishments.js';
 import { users } from './users.js';
@@ -30,7 +41,7 @@ export const registrationRequests = pgTable(
     managerJobTitle: text().notNull(),
     managerEmail: citext().notNull(),
     managerPhone: text().notNull(),
-    status: registrationStatus().notNull().default('received'),
+    status: registrationStatus().notNull().default(RegistrationStatus.RECEIVED),
     rejectionReason: text(),
     // SV-04
     privacyConsentAt: timestamptz().notNull(),
@@ -61,11 +72,11 @@ export const registrationRequests = pgTable(
     ),
     check(
       'registration_requests_rejected_check',
-      sql`status <> 'rejected' OR rejection_reason IS NOT NULL`,
+      sql`status <> ${sqlValue(RegistrationStatus.REJECTED)} OR rejection_reason IS NOT NULL`,
     ),
     check(
       'registration_requests_validated_check',
-      sql`status NOT IN ('validated', 'activated') OR establishment_id IS NOT NULL`,
+      sql`status NOT IN (${sqlValues([RegistrationStatus.VALIDATED, RegistrationStatus.ACTIVATED])}) OR establishment_id IS NOT NULL`,
     ),
   ],
 );
@@ -83,7 +94,7 @@ export const registrationRequestEvents = pgTable(
       .references(() => registrationRequests.id),
     // NULL when the actor is the requester or the system.
     actorUserId: uuid(),
-    actorKind: text().notNull(),
+    actorKind: text().$type<RegistrationActorKind>().notNull(),
     // NULL on creation.
     fromStatus: registrationStatus(),
     toStatus: registrationStatus().notNull(),
@@ -97,7 +108,7 @@ export const registrationRequestEvents = pgTable(
     ),
     check(
       'registration_request_events_actor_kind_check',
-      sql`actor_kind IN ('super_admin', 'requester', 'system')`,
+      sql`actor_kind IN (${sqlValues(Object.values(RegistrationActorKind))})`,
     ),
   ],
 );
@@ -115,7 +126,7 @@ export const demoRequests = pgTable(
     phone: text(),
     preferredSlot: text(),
     message: text(),
-    status: demoStatus().notNull().default('new'),
+    status: demoStatus().notNull().default(DemoStatus.NEW),
     internalNotes: text(),
     privacyConsentAt: timestamptz().notNull(),
     privacyPolicyVersion: text().notNull(),

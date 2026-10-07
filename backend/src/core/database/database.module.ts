@@ -6,10 +6,9 @@ import {
   type OnApplicationShutdown,
 } from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
-import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { databaseConfig } from '@config/index.js';
-import * as schema from '@database/schema/index.js';
+import { createDatabase } from './create-database.js';
 import { DRIZZLE, PG_POOL } from './database.constants.js';
 
 /** Global on purpose: every repository needs the client, nothing else does. */
@@ -25,9 +24,7 @@ import { DRIZZLE, PG_POOL } from './database.constants.js';
     {
       provide: DRIZZLE,
       inject: [PG_POOL],
-      // casing must match drizzle.config.ts.
-      useFactory: (pool: Pool) =>
-        drizzle({ client: pool, schema, casing: 'snake_case' }),
+      useFactory: (pool: Pool) => createDatabase(pool),
     },
   ],
   exports: [DRIZZLE],

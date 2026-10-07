@@ -44,6 +44,17 @@ export default tseslint.config(
           ],
         },
       ],
+      // Domain values come from their enum (UserRole, SessionChannel), never
+      // from a string written by hand.
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            'Literal[value=/^(intervenant|responsable|super_admin|mobile|backoffice)$/]',
+          message:
+            'Use the enum (UserRole, SessionChannel) instead of a hard-coded value.',
+        },
+      ],
       // Casing rules of docs/conventions.md#naming. The most specific
       // selector wins, whatever the order.
       '@typescript-eslint/naming-convention': [
@@ -58,6 +69,8 @@ export default tseslint.config(
         {
           selector: 'variable',
           format: ['camelCase', 'UPPER_CASE', 'PascalCase'],
+          // `_name`: deliberately unused, as in no-unused-vars below.
+          leadingUnderscore: 'allow',
         },
         { selector: 'variable', modifiers: ['destructured'], format: null },
         { selector: 'function', format: ['camelCase', 'PascalCase'] },
@@ -78,6 +91,11 @@ export default tseslint.config(
         { selector: 'import', format: null },
       ],
     },
+  },
+  {
+    // Where the values are defined.
+    files: ['src/shared/enums/*.enum.ts'],
+    rules: { 'no-restricted-syntax': 'off' },
   },
   {
     // Nest modules are decorated empty classes by design.

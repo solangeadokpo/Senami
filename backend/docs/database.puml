@@ -102,6 +102,7 @@ package "Establishments and accounts" {
     * user_id : uuid <<FK>>
     * channel : session_channel
     * refresh_token_hash : bytea <<UK>>
+      previous_refresh_token_hash : bytea
       device_id : text
       device_name : text
       platform : text

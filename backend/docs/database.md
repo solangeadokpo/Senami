@@ -27,14 +27,14 @@ line) breaks a contractual commitment to the client. Do not make it.
 
 ### Establishments and accounts
 
-| Table                   | Purpose                                                                                                    |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `establishments`        | The tenant. Name, address, email, phone and logo are printed on the sheet.                                 |
-| `users`                 | One table for all roles. `establishment_id` is NULL for the super admin, set otherwise (check constraint). |
-| `user_invitations`      | Invitation links, stored as token hashes. One pending invitation per user.                                 |
-| `password_reset_tokens` | Forgotten password links, token hashes.                                                                    |
-| `auth_sessions`         | Long mobile sessions and back office sessions, revocable remotely. The PIN never leaves the phone.         |
-| `totp_recovery_codes`   | Ten single-use 2FA recovery codes, hashed.                                                                 |
+| Table                   | Purpose                                                                                                                                                                                        |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `establishments`        | The tenant. Name, address, email, phone and logo are printed on the sheet.                                                                                                                     |
+| `users`                 | One table for all roles. `establishment_id` is NULL for the super admin, set otherwise (check constraint).                                                                                     |
+| `user_invitations`      | Invitation links, stored as token hashes. One pending invitation per user.                                                                                                                     |
+| `password_reset_tokens` | Forgotten password links, token hashes.                                                                                                                                                        |
+| `auth_sessions`         | Mobile and back office sessions, revocable remotely. Refresh token stored as a SHA-256 hash, rotated on every use; the previous hash detects a replayed token. The PIN never leaves the phone. |
+| `totp_recovery_codes`   | Ten single-use 2FA recovery codes, hashed.                                                                                                                                                     |
 
 ### Establishment space
 
@@ -172,6 +172,40 @@ slots are grouped at display time. Exclude establishments with `is_demo`.
   `test/database-guarantees.e2e-spec.ts` covers both.
 - Timestamps are `timestamptz`, stored in UTC, displayed in Europe/Paris.
 - Emails are `citext`: unique regardless of case.
+
+### Enums
+
+Every PostgreSQL enum is built from a TypeScript enum of
+`src/shared/enums/` (`pgEnum('user_role', UserRole)`): the values exist in
+one place, and the column types follow. Two text columns with a fixed set of
+values are typed the same way and checked from their enum: `auth_sessions.platform`
+(`DevicePlatform`) and `registration_request_events.actor_kind`
+(`RegistrationActorKind`). Adding a value is a schema change: edit the enum,
+then `pnpm db:generate`.
+
+## Seeding
+
+Seeders create what is missing and never change what exists: they can run
+again safely ([spec](features/database/seeders.md)).
+
+| Level       | Creates                                                                                                                         | Where               |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| `bootstrap` | the first super administrator                                                                                                   | every environment   |
+| `demo`      | yearly plan, demo establishment (`is_demo`), its subscription, a responsable, an intervenant, a `to` recipient, useful contacts | never in production |
+
+```bash
+pnpm db:seed              # all, from the sources (development)
+pnpm db:seed:bootstrap
+pnpm db:seed:demo
+# any other environment, after the migrations, with the API image:
+docker run --rm -e DATABASE_URL=... -e SEED_SUPER_ADMIN_EMAIL=... \
+  -e SEED_SUPER_ADMIN_PASSWORD=... senami-api node dist/database/seeds/seed.js bootstrap
+```
+
+Passwords come from `SEED_SUPER_ADMIN_PASSWORD` and `SEED_DEMO_PASSWORD`
+(12 characters at least), never from the code, and never reach the logs.
+A new seeder implements `Seeder` in `src/database/seeds/seeders/` and is
+listed in `seedersFor()`.
 
 ## Changing the schema
 

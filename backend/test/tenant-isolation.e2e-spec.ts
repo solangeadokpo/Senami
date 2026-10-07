@@ -1,3 +1,4 @@
+import { EstablishmentType } from '@shared/enums/establishment-type.enum.js';
 import type { INestApplication } from '@nestjs/common';
 import { eq, inArray } from 'drizzle-orm';
 import {
@@ -25,14 +26,14 @@ describe('tenant isolation (row level security)', () => {
       .values([
         {
           name: 'School A',
-          type: 'primaire',
+          type: EstablishmentType.PRIMAIRE,
           addressLine: '1 rue A',
           postalCode: '59000',
           city: 'Lille',
         },
         {
           name: 'School B',
-          type: 'college',
+          type: EstablishmentType.COLLEGE,
           addressLine: '2 rue B',
           postalCode: '75001',
           city: 'Paris',

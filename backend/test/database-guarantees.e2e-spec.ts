@@ -1,3 +1,4 @@
+import { EstablishmentType } from '@shared/enums/establishment-type.enum.js';
 import type { INestApplication } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { DRIZZLE, type Database } from '@core/database/index.js';
@@ -22,7 +23,7 @@ describe('database guarantees', () => {
       .insert(establishments)
       .values({
         name: 'School',
-        type: 'lycee',
+        type: EstablishmentType.LYCEE,
         addressLine: '3 rue C',
         postalCode: '69001',
         city: 'Lyon',

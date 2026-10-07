@@ -4,6 +4,7 @@ import {
   ValidationPipe,
   VersioningType,
 } from '@nestjs/common';
+import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import type { AppConfig } from './config/index.js';
 import {
@@ -27,6 +28,7 @@ export function configureApp(app: INestApplication, config: AppConfig): void {
   // Before anything that can fail, the body parser included.
   app.use(requestIdMiddleware);
   app.use(helmet());
+  app.use(cookieParser());
 
   app.setGlobalPrefix(config.apiPrefix, { exclude: UNPREFIXED_ROUTES });
 

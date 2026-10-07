@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm';
+import { SubmissionStatus } from '@shared/enums/submission-status.enum.js';
 import {
   check,
   index,
@@ -9,7 +10,7 @@ import {
   unique,
   uuid,
 } from 'drizzle-orm/pg-core';
-import { timestamptz } from './columns.js';
+import { timestamptz, sqlValue } from './columns.js';
 import { submissionStatus } from './enums.js';
 import { establishments } from './establishments.js';
 import { tenantIsolation } from './policies.js';
@@ -32,7 +33,7 @@ export const declarationSubmissions = pgTable(
     dossierNumber: text().generatedAlwaysAs(
       sql`dossier_year::text || '-' || lpad(dossier_seq::text, 7, '0')`,
     ),
-    status: submissionStatus().notNull().default('numbered'),
+    status: submissionStatus().notNull().default(SubmissionStatus.NUMBERED),
     receivedAt: timestamptz().notNull().defaultNow(),
     sentAt: timestamptz(),
     // Statistics (STAT-01). The hour only, never the date of the event.
@@ -50,7 +51,7 @@ export const declarationSubmissions = pgTable(
     index('declaration_submissions_month_idx').on(t.receivedAt),
     index('declaration_submissions_pending_idx')
       .on(t.receivedAt)
-      .where(sql`status = 'numbered'`),
+      .where(sql`status = ${sqlValue(SubmissionStatus.NUMBERED)}`),
     check(
       'declaration_submissions_year_check',
       sql`dossier_year BETWEEN 2020 AND 2999`,
@@ -65,7 +66,7 @@ export const declarationSubmissions = pgTable(
     ),
     check(
       'declaration_submissions_sent_check',
-      sql`(status = 'sent') = (sent_at IS NOT NULL)`,
+      sql`(status = ${sqlValue(SubmissionStatus.SENT)}) = (sent_at IS NOT NULL)`,
     ),
   ],
 );

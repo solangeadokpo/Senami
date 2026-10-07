@@ -1,3 +1,4 @@
+import { type SQL, sql } from 'drizzle-orm';
 import { customType, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 /** Case-insensitive text, for emails (extension created by the first migration). */
@@ -22,3 +23,9 @@ export const updatedAt = () =>
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date());
+
+/** An enum value inlined in DDL: check constraints, partial index conditions. */
+export const sqlValue = (value: string): SQL => sql.raw(`'${value}'`);
+
+export const sqlValues = (values: readonly string[]): SQL =>
+  sql.raw(values.map((value) => `'${value}'`).join(', '));
