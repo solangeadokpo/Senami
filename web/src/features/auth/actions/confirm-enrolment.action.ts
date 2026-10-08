@@ -6,10 +6,7 @@ import {
   challengeTokenSchema,
   totpCodeSchema,
 } from '@features/auth/schemas/sign-in.schema';
-import {
-  type ActionResult,
-  toActionFailure,
-} from '@features/auth/utils/action-result';
+import { type ActionResult, toActionFailure } from '@core/api/action-result';
 import { AuthErrorCode } from '@features/auth/utils/auth-error-messages';
 
 /**

@@ -1,18 +1,13 @@
 'use server';
 
+import { type ActionResult, toActionFailure } from '@core/api/action-result';
+import { setFlash } from '@core/flash/set-flash';
 import { verifyCode } from '@features/auth/api/backoffice-auth.api';
-import {
-  keepSessionCookie,
-  setAuthFlash,
-} from '@features/auth/api/session-cookie';
+import { keepSessionCookie } from '@features/auth/api/session-cookie';
 import {
   challengeTokenSchema,
   totpCodeSchema,
 } from '@features/auth/schemas/sign-in.schema';
-import {
-  type ActionResult,
-  toActionFailure,
-} from '@features/auth/utils/action-result';
 import { AuthErrorCode } from '@features/auth/utils/auth-error-messages';
 
 /** Opens the session; the page then goes to the back office. */
@@ -30,7 +25,7 @@ export async function verifyCodeAction(
   try {
     const { headers } = await verifyCode(challengeToken, code);
     const sessionExpiresAt = await keepSessionCookie(headers);
-    await setAuthFlash({
+    await setFlash({
       kind: 'signed-in',
       sessionExpiresAt: sessionExpiresAt?.toISOString() ?? null,
     });

@@ -9,12 +9,12 @@ import { RecoveryCodesStep } from '@features/auth/components/recovery-codes-step
 import { RecoveryStep } from '@features/auth/components/recovery-step';
 import { SignInStep } from '@features/auth/components/sign-in-step';
 import { VerifyStep } from '@features/auth/components/verify-step';
-import type { ActionResult } from '@features/auth/utils/action-result';
+import type { ActionResult } from '@core/api/action-result';
 import {
   AuthErrorCode,
   isChallengeLost,
 } from '@features/auth/utils/auth-error-messages';
-import { Logo } from '@shared/components/brand/logo';
+import { AuthCard } from '@shared/components/brand/auth-card';
 import { AuthStep } from '@shared/enums/auth-step.enum';
 
 /** Held in memory only: a reload starts the sign-in over. */
@@ -78,10 +78,7 @@ export function SignInFlow() {
   };
 
   return (
-    <div className="w-full max-w-[460px] rounded-3xl bg-white px-5 py-8 shadow-[0_40px_80px_-32px_rgb(0_0_0/0.6)] motion-safe:animate-rise sm:px-9 sm:py-10">
-      <div className="mb-6">
-        <Logo width={150} priority />
-      </div>
+    <AuthCard>
       <div key={state.step} className="motion-safe:animate-appear">
         {state.step === 'sign-in' ? (
           <SignInStep
@@ -126,6 +123,6 @@ export function SignInFlow() {
         ) : null}
         {state.step === 'expired' ? <ExpiredStep onRestart={restart} /> : null}
       </div>
-    </div>
+    </AuthCard>
   );
 }
