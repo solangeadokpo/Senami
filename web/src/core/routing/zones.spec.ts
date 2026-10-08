@@ -27,6 +27,13 @@ describe('resolveZone', () => {
     });
   });
 
+  it('serves the invitation page without session cookie', () => {
+    expect(resolveZone(APP_HOST, '/invitation', APP_HOST, false)).toEqual({
+      kind: 'admin',
+      rewriteTo: '/admin/invitation',
+    });
+  });
+
   it('serves the sign-in page without session cookie', () => {
     expect(resolveZone(APP_HOST, '/connexion', APP_HOST, false)).toEqual({
       kind: 'admin',

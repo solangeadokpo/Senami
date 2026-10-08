@@ -1,8 +1,9 @@
 /** Internal path of the back office: never reached directly. */
 export const ADMIN_PREFIX = '/admin';
 
-/** The only back office pages reachable without a session. */
 export const SIGN_IN_PATH = '/connexion';
+/** The only back office pages reachable without a session. */
+const PUBLIC_PATHS = new Set([SIGN_IN_PATH, '/invitation']);
 
 export type ZoneDecision =
   | { kind: 'site' }
@@ -22,7 +23,7 @@ export function resolveZone(
 ): ZoneDecision {
   if (host === appHost) {
     // Optimistic: no cookie, no session. The pages check the session itself.
-    if (!hasSessionCookie && pathname !== SIGN_IN_PATH) {
+    if (!hasSessionCookie && !PUBLIC_PATHS.has(pathname)) {
       return { kind: 'sign-in', redirectTo: SIGN_IN_PATH };
     }
     return { kind: 'admin', rewriteTo: `${ADMIN_PREFIX}${pathname}` };
