@@ -61,6 +61,7 @@ docker compose down                   # stop; add -v to drop the database
 | ---------- | ------------------------------------------------------------------------- | -------------------------- |
 | `postgres` | PostgreSQL 16, databases `senami` and `senami_test`                       | 5433                       |
 | `migrate`  | one-off: applies pending migrations, then exits                           |                            |
+| `mailpit`  | catches the emails the API sends, shown on <http://localhost:8025>        | 1025 (SMTP), 8025          |
 | `api`      | the API (`backend/Dockerfile`), once `migrate` has succeeded              | 3000                       |
 | `web`      | showcase site and back office (`web/Dockerfile`), once the API is healthy | 3001, `app.localhost:3001` |
 
