@@ -223,6 +223,20 @@
     }
   }
 
+  /* The steps of a wizard slide in the direction of travel. */
+  @keyframes slide {
+    from {
+      opacity: 0;
+      transform: translateX(16px);
+    }
+  }
+  @keyframes slide-back {
+    from {
+      opacity: 0;
+      transform: translateX(-16px);
+    }
+  }
+
   /* A field refused by the API shakes once. */
   --animate-shake: shake 0.4s ease-in-out;
   @keyframes shake {

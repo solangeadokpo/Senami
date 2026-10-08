@@ -29,7 +29,7 @@ const RESPONSABLE: NavItem[] = [
     label: 'Fiche et destinataires',
     href: '/fiche',
     icon: FileText,
-    isAvailable: false,
+    isAvailable: true,
   },
   {
     label: 'Abonnement',
@@ -45,7 +45,7 @@ const SUPER_ADMIN: NavItem[] = [
     label: 'Établissements',
     href: '/etablissements',
     icon: Building2,
-    isAvailable: false,
+    isAvailable: true,
   },
   {
     label: 'Abonnements',
@@ -63,4 +63,10 @@ const SUPER_ADMIN: NavItem[] = [
 
 export function navItemsFor(role: UserRole): NavItem[] {
   return role === UserRole.SUPER_ADMIN ? SUPER_ADMIN : RESPONSABLE;
+}
+
+/** The dashboard only on "/", the other sections on their sub-pages too. */
+export function isActiveItem(href: string, pathname: string): boolean {
+  if (href === '/') return pathname === '/';
+  return pathname === href || pathname.startsWith(`${href}/`);
 }

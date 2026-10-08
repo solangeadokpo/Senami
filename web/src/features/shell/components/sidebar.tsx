@@ -4,7 +4,7 @@ import { Building2, X } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserMenu } from '@features/shell/components/user-menu';
-import { navItemsFor } from '@features/shell/utils/nav-items';
+import { isActiveItem, navItemsFor } from '@features/shell/utils/nav-items';
 import type { ShellUser } from '@features/shell/utils/shell-user';
 import { Logo } from '@shared/components/brand/logo';
 import { UserRole } from '@shared/enums/user-role.enum';
@@ -72,7 +72,7 @@ export function Sidebar({
               </span>
             );
           }
-          const isActive = pathname === href;
+          const isActive = isActiveItem(href, pathname);
           return (
             <Link
               key={href}
