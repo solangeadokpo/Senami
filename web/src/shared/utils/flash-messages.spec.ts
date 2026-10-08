@@ -1,8 +1,8 @@
 import { describeFlash } from './flash';
 
 describe('describeFlash', () => {
-  it('gives the end of the session in local time', () => {
-    const until = new Date(2026, 9, 7, 2, 32).toISOString();
+  it('gives the end of the session in France’s time', () => {
+    const until = '2026-10-07T00:32:00Z';
 
     expect(describeFlash({ kind: 'signed-in', sessionExpiresAt: until })).toBe(
       'Connexion établie. Session ouverte jusqu’à 02 h 32.',
