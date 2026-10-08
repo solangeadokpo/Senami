@@ -35,23 +35,45 @@ export function Field({
     <div className={cn('grid gap-2', className)}>
       <Label htmlFor={id}>{label}</Label>
       {children}
-      <p
+      <FieldHelp
         id={`${id}-help`}
-        aria-live="polite"
-        className={cn(
-          'flex min-h-5 items-center gap-2 text-sm',
-          error === undefined
-            ? warning === undefined
-              ? 'text-muted-foreground'
-              : 'text-warning'
-            : 'text-error',
-        )}
-      >
-        {error === undefined ? null : (
-          <CircleAlert className="size-4 shrink-0" aria-hidden />
-        )}
-        {error ?? warning ?? hint}
-      </p>
+        error={error}
+        warning={warning}
+        hint={hint}
+      />
     </div>
+  );
+}
+
+/** The line under a control: the error, else the warning, else the hint. */
+export function FieldHelp({
+  id,
+  error,
+  warning,
+  hint,
+}: {
+  id: string;
+  error?: string | undefined;
+  warning?: string | undefined;
+  hint?: ReactNode;
+}) {
+  return (
+    <p
+      id={id}
+      aria-live="polite"
+      className={cn(
+        'flex min-h-5 items-center gap-2 text-sm',
+        error === undefined
+          ? warning === undefined
+            ? 'text-muted-foreground'
+            : 'text-warning'
+          : 'text-error',
+      )}
+    >
+      {error === undefined ? null : (
+        <CircleAlert className="size-4 shrink-0" aria-hidden />
+      )}
+      {error ?? warning ?? hint}
+    </p>
   );
 }

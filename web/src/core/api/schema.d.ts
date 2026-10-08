@@ -212,6 +212,134 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/invitations/lookup': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['InvitationsController_lookup_v1'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/invitations/acceptance': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['InvitationsController_accept_v1'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/users/{userId}/invitation': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['UserInvitationController_resend_v1'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/establishments': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['EstablishmentsController_list_v1'];
+    put?: never;
+    post: operations['EstablishmentsController_create_v1'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/establishments/cities': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['EstablishmentsController_cities_v1'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/establishments/{establishmentId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['EstablishmentsController_detail_v1'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: operations['EstablishmentsController_update_v1'];
+    trace?: never;
+  };
+  '/api/v1/establishments/{establishmentId}/suspension': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['EstablishmentsController_suspend_v1'];
+    delete: operations['EstablishmentsController_reactivate_v1'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/establishments/{establishmentId}/logo': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['EstablishmentsController_logo_v1'];
+    put: operations['EstablishmentsController_setLogo_v1'];
+    post?: never;
+    delete: operations['EstablishmentsController_removeLogo_v1'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -394,6 +522,176 @@ export interface components {
       lastUsedAt: string;
       /** @description The session of this request */
       current: boolean;
+    };
+    InvitationResponseDto: {
+      firstName: string;
+      email: string;
+      /** @enum {string} */
+      role: 'intervenant' | 'responsable' | 'super_admin';
+      establishmentName: string | null;
+      establishmentCity: string | null;
+      /** Format: date-time */
+      expiresAt: string;
+    };
+    InvitationTokenDto: {
+      /** @description From the # of the invitation link */
+      token: string;
+    };
+    AcceptInvitationDto: {
+      /** @description From the # of the invitation link */
+      token: string;
+      password: string;
+    };
+    ResentInvitationResponseDto: {
+      /** Format: date-time */
+      expiresAt: string;
+    };
+    EstablishmentResponsableDto: {
+      /** Format: uuid */
+      userId: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+      /** @enum {string} */
+      status: 'invited' | 'active' | 'deactivated';
+      isSecondFactorEnrolled: boolean;
+    };
+    EstablishmentSubscriptionDto: {
+      /** @enum {string} */
+      status:
+        'pending_payment' | 'active' | 'past_due' | 'suspended' | 'cancelled';
+      planName: string;
+      /** Format: date-time */
+      currentPeriodEnd: string | null;
+    };
+    EstablishmentSummaryResponseDto: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      /** @enum {string} */
+      type: 'maternelle' | 'primaire' | 'college' | 'lycee' | 'groupe_scolaire';
+      city: string;
+      /** @enum {string} */
+      status: 'active' | 'suspended' | 'terminated';
+      isDemo: boolean;
+      /** Format: date-time */
+      createdAt: string;
+      responsable: components['schemas']['EstablishmentResponsableDto'] | null;
+      subscription:
+        components['schemas']['EstablishmentSubscriptionDto'] | null;
+      /** @description A counter, never a sheet */
+      declarationsThisMonth: number;
+    };
+    PaginationMeta: {
+      /** @example 1 */
+      page: number;
+      /** @example 20 */
+      limit: number;
+      /** @example 312 */
+      total: number;
+      /** @example 16 */
+      totalPages: number;
+      hasNextPage: boolean;
+      hasPreviousPage: boolean;
+    };
+    String: Record<string, never>;
+    UserCountDto: {
+      /** @enum {string} */
+      role: 'intervenant' | 'responsable' | 'super_admin';
+      /** @enum {string} */
+      status: 'invited' | 'active' | 'deactivated';
+      count: number;
+    };
+    EstablishmentDetailResponseDto: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      /** @enum {string} */
+      type: 'maternelle' | 'primaire' | 'college' | 'lycee' | 'groupe_scolaire';
+      city: string;
+      /** @enum {string} */
+      status: 'active' | 'suspended' | 'terminated';
+      isDemo: boolean;
+      /** Format: date-time */
+      createdAt: string;
+      responsable: components['schemas']['EstablishmentResponsableDto'] | null;
+      subscription:
+        components['schemas']['EstablishmentSubscriptionDto'] | null;
+      /** @description A counter, never a sheet */
+      declarationsThisMonth: number;
+      addressLine: string;
+      postalCode: string;
+      phone: string | null;
+      email: string | null;
+      approxStudentCount: number | null;
+      hasLogo: boolean;
+      /** Format: date-time */
+      suspendedAt: string | null;
+      suspensionReason: string | null;
+      users: components['schemas']['UserCountDto'][];
+    };
+    InvitationOutcomeDto: {
+      /** @description false: the email failed, resend it */
+      sent: boolean;
+      /** Format: date-time */
+      expiresAt: string;
+    };
+    CreatedEstablishmentResponseDto: {
+      establishment: components['schemas']['EstablishmentDetailResponseDto'];
+      invitation: components['schemas']['InvitationOutcomeDto'];
+    };
+    EstablishmentFieldsDto: {
+      /** @example École Sainte-Marie */
+      name: string;
+      /** @enum {string} */
+      type: 'maternelle' | 'primaire' | 'college' | 'lycee' | 'groupe_scolaire';
+      /** @example 12 rue des Écoles */
+      addressLine: string;
+      /** @example 59000 */
+      postalCode: string;
+      /** @example Lille */
+      city: string;
+      /** @example 03 20 00 00 00 */
+      phone?: string | null;
+      /** @example contact@ecole.fr */
+      email?: string | null;
+      /** @example 250 */
+      approxStudentCount?: number | null;
+    };
+    ResponsableDto: {
+      /** @example Claire */
+      firstName: string;
+      /** @example Houngbo */
+      lastName: string;
+      /** @example direction@ecole.fr */
+      email: string;
+    };
+    CreateEstablishmentDto: {
+      establishment: components['schemas']['EstablishmentFieldsDto'];
+      responsable: components['schemas']['ResponsableDto'];
+    };
+    UpdateEstablishmentDto: {
+      /** @example École Sainte-Marie */
+      name?: string;
+      /** @enum {string} */
+      type?:
+        'maternelle' | 'primaire' | 'college' | 'lycee' | 'groupe_scolaire';
+      /** @example 12 rue des Écoles */
+      addressLine?: string;
+      /** @example 59000 */
+      postalCode?: string;
+      /** @example Lille */
+      city?: string;
+      /** @example 03 20 00 00 00 */
+      phone?: string | null;
+      /** @example contact@ecole.fr */
+      email?: string | null;
+      /** @example 250 */
+      approxStudentCount?: number | null;
+    };
+    SuspendEstablishmentDto: {
+      /** @example Abonnement impayé depuis septembre */
+      reason: string;
     };
   };
   responses: never;
@@ -1024,6 +1322,718 @@ export interface operations {
       header?: never;
       path: {
         userId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+    };
+  };
+  InvitationsController_lookup_v1: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['InvitationTokenDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: components['schemas']['InvitationResponseDto'];
+          };
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+    };
+  };
+  InvitationsController_accept_v1: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AcceptInvitationDto'];
+      };
+    };
+    responses: {
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+    };
+  };
+  UserInvitationController_resend_v1: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        userId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: components['schemas']['ResentInvitationResponseDto'];
+          };
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+    };
+  };
+  EstablishmentsController_list_v1: {
+    parameters: {
+      query?: {
+        page?: number;
+        limit?: number;
+        /** @description Name or responsable email */
+        search?: string;
+        city?: string;
+        status?: 'active' | 'suspended' | 'terminated';
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: components['schemas']['EstablishmentSummaryResponseDto'][];
+            meta: components['schemas']['PaginationMeta'];
+          };
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+    };
+  };
+  EstablishmentsController_create_v1: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateEstablishmentDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: components['schemas']['CreatedEstablishmentResponseDto'];
+          };
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+    };
+  };
+  EstablishmentsController_cities_v1: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: components['schemas']['String'][];
+          };
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+    };
+  };
+  EstablishmentsController_detail_v1: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        establishmentId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: components['schemas']['EstablishmentDetailResponseDto'];
+          };
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+    };
+  };
+  EstablishmentsController_update_v1: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        establishmentId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateEstablishmentDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: components['schemas']['EstablishmentDetailResponseDto'];
+          };
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+    };
+  };
+  EstablishmentsController_suspend_v1: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        establishmentId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SuspendEstablishmentDto'];
+      };
+    };
+    responses: {
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+    };
+  };
+  EstablishmentsController_reactivate_v1: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        establishmentId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+    };
+  };
+  EstablishmentsController_logo_v1: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        establishmentId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+    };
+  };
+  EstablishmentsController_setLogo_v1: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        establishmentId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'multipart/form-data': {
+          /** Format: binary */
+          logo?: string;
+        };
+      };
+    };
+    responses: {
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+    };
+  };
+  EstablishmentsController_removeLogo_v1: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        establishmentId: string;
       };
       cookie?: never;
     };

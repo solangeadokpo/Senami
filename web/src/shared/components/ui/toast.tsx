@@ -1,22 +1,39 @@
 'use client';
 
 import { CircleCheck } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { cn } from '@shared/utils/cn';
 
-/** A short confirmation at the bottom of the screen, gone after 4 s. */
+const SHOWN_EVENT = 'senami:toast-shown';
+
+/**
+ * A short confirmation at the bottom of the screen, gone after 4 s. One at a
+ * time: a page toast hides the flash still showing, and the reverse.
+ */
 export function Toast({ message }: { message: string | null }) {
+  const id = useId();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+    const onShown = (event: Event) => {
+      if ((event as CustomEvent<string>).detail !== id) setIsVisible(false);
+    };
+    window.addEventListener(SHOWN_EVENT, onShown);
+    return () => window.removeEventListener(SHOWN_EVENT, onShown);
+  }, [id]);
+
+  useEffect(() => {
     if (message === null) return;
-    const show = setTimeout(() => setIsVisible(true), 50);
+    const show = setTimeout(() => {
+      window.dispatchEvent(new CustomEvent(SHOWN_EVENT, { detail: id }));
+      setIsVisible(true);
+    }, 50);
     const hide = setTimeout(() => setIsVisible(false), 4000);
     return () => {
       clearTimeout(show);
       clearTimeout(hide);
     };
-  }, [message]);
+  }, [id, message]);
 
   return (
     <div
