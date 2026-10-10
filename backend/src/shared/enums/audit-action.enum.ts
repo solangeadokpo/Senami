@@ -11,4 +11,5 @@ export enum AuditAction {
   ESTABLISHMENT_UPDATED = 'establishment_updated',
   ESTABLISHMENT_SUSPENDED = 'establishment_suspended',
   ESTABLISHMENT_REACTIVATED = 'establishment_reactivated',
+  SHEET_RECIPIENTS_UPDATED = 'sheet_recipients_updated',
 }

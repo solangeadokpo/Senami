@@ -4,6 +4,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { EmailModule } from './email/email.module.js';
 import { EstablishmentsModule } from './establishments/establishments.module.js';
 import { InvitationsModule } from './invitations/invitations.module.js';
+import { SheetRecipientsModule } from './sheet-recipients/sheet-recipients.module.js';
 
 /**
  * The business surface. Registering a new module here is the only change
@@ -15,6 +16,7 @@ import { InvitationsModule } from './invitations/invitations.module.js';
     AuthModule,
     EmailModule,
     InvitationsModule,
+    SheetRecipientsModule,
     EstablishmentsModule,
   ],
 })

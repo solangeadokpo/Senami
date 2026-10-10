@@ -38,11 +38,11 @@ line) breaks a contractual commitment to the client. Do not make it.
 
 ### Establishment space
 
-| Table              | Purpose                                                                                                                  |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| `sheet_recipients` | Who receives the sheet email, typed `to`, `cc` or `bcc`. At least one `to` is required to declare.                       |
-| `useful_contacts`  | Direction, emergency, SAMU numbers shown in the mobile app.                                                              |
-| `students`         | Last name, first name, class, optional internal id. Nothing else (ELV-02). Archived, not deleted, by a "replace" import. |
+| Table              | Purpose                                                                                                                                            |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sheet_recipients` | Who receives the sheet email: one row per establishment, three lists `to_emails`, `cc_emails`, `bcc_emails`. At least one `to` (check constraint). |
+| `useful_contacts`  | Direction, emergency, SAMU numbers shown in the mobile app.                                                                                        |
+| `students`         | Last name, first name, class, optional internal id. Nothing else (ELV-02). Archived, not deleted, by a "replace" import.                           |
 
 ### Declarations
 
@@ -76,8 +76,8 @@ line) breaks a contractual commitment to the client. Do not make it.
 | `audit_logs` | Administration actions (invitations, revocations, 2FA reset...). Append-only. |
 
 Written only by `AuditService` (`src/modules/audit/`), in the transaction of
-the recorded action. Today: `sessions_revoked`, `totp_enrolled`,
-`totp_locked`, `totp_reset`, `recovery_code_used`.
+the recorded action. The actions are the values of `AuditAction`
+(`src/shared/enums/audit-action.enum.ts`).
 
 ## What lives in the database, what lives in the code
 

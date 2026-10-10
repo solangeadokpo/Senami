@@ -2,8 +2,12 @@ import { AuditAction } from '@shared/enums/audit-action.enum.js';
 import { EstablishmentType } from '@shared/enums/establishment-type.enum.js';
 import type { INestApplication } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
-import { DRIZZLE, type Database } from '@core/database/index.js';
-import { auditLogs, establishments } from '@database/schema/index.js';
+import { DRIZZLE, type Database, withTenant } from '@core/database/index.js';
+import {
+  auditLogs,
+  establishments,
+  sheetRecipients,
+} from '@database/schema/index.js';
 import { createTestApp } from './app.js';
 
 describe('database guarantees', () => {
@@ -76,5 +80,30 @@ describe('database guarantees', () => {
     await expect(
       db.delete(auditLogs).where(eq(auditLogs.id, entry.id)),
     ).rejects.toThrow();
+  });
+
+  it('rejects sheet recipients without a main recipient', async () => {
+    const [school] = await db
+      .insert(establishments)
+      .values({
+        name: 'School',
+        type: EstablishmentType.PRIMAIRE,
+        addressLine: '4 rue D',
+        postalCode: '59000',
+        city: 'Lille',
+      })
+      .returning({ id: establishments.id });
+    if (school === undefined) {
+      throw new Error('fixture not created');
+    }
+
+    await expect(
+      withTenant(db, school.id, (tx) =>
+        tx
+          .insert(sheetRecipients)
+          .values({ establishmentId: school.id, toEmails: [] }),
+      ),
+    ).rejects.toThrow();
+    await db.delete(establishments).where(eq(establishments.id, school.id));
   });
 });

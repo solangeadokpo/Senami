@@ -14,7 +14,6 @@ import type { SeedContext, Seeder } from '@database/seeds/seed-context.js';
 import { ContactCategory } from '@shared/enums/contact-category.enum.js';
 import { EstablishmentStatus } from '@shared/enums/establishment-status.enum.js';
 import { EstablishmentType } from '@shared/enums/establishment-type.enum.js';
-import { RecipientType } from '@shared/enums/recipient-type.enum.js';
 import { SubscriptionStatus } from '@shared/enums/subscription-status.enum.js';
 import { UserRole } from '@shared/enums/user-role.enum.js';
 import { UserStatus } from '@shared/enums/user-status.enum.js';
@@ -217,15 +216,9 @@ export class DemoEstablishmentSeeder implements Seeder {
     { logger }: SeedContext,
   ): Promise<void> {
     const [existing] = await tx
-      .select({ id: sheetRecipients.id })
+      .select({ establishmentId: sheetRecipients.establishmentId })
       .from(sheetRecipients)
-      .where(
-        and(
-          eq(sheetRecipients.establishmentId, DEMO_ESTABLISHMENT_ID),
-          eq(sheetRecipients.email, DEMO_RESPONSABLE_EMAIL),
-        ),
-      )
-      .limit(1);
+      .where(eq(sheetRecipients.establishmentId, DEMO_ESTABLISHMENT_ID));
     if (existing !== undefined) {
       logger.info(
         { establishmentId: DEMO_ESTABLISHMENT_ID },
@@ -236,9 +229,7 @@ export class DemoEstablishmentSeeder implements Seeder {
 
     await tx.insert(sheetRecipients).values({
       establishmentId: DEMO_ESTABLISHMENT_ID,
-      recipientType: RecipientType.TO,
-      email: DEMO_RESPONSABLE_EMAIL,
-      label: 'Direction',
+      toEmails: [DEMO_RESPONSABLE_EMAIL],
     });
     logger.info(
       { establishmentId: DEMO_ESTABLISHMENT_ID },
