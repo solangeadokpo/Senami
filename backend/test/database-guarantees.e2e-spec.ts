@@ -1,3 +1,4 @@
+import { AuditAction } from '@shared/enums/audit-action.enum.js';
 import { EstablishmentType } from '@shared/enums/establishment-type.enum.js';
 import type { INestApplication } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
@@ -49,7 +50,7 @@ describe('database guarantees', () => {
   it('rejects any update of the audit trail', async () => {
     const [entry] = await db
       .insert(auditLogs)
-      .values({ action: 'test.append_only' })
+      .values({ action: AuditAction.TOTP_RESET })
       .returning({ id: auditLogs.id });
     if (entry === undefined) {
       throw new Error('fixture not created');
@@ -58,14 +59,22 @@ describe('database guarantees', () => {
     await expect(
       db
         .update(auditLogs)
-        .set({ action: 'test.tampered' })
+        .set({ action: AuditAction.SESSIONS_REVOKED })
         .where(eq(auditLogs.id, entry.id)),
     ).rejects.toThrow();
   });
 
   it('rejects any deletion from the audit trail', async () => {
+    const [entry] = await db
+      .insert(auditLogs)
+      .values({ action: AuditAction.TOTP_RESET })
+      .returning({ id: auditLogs.id });
+    if (entry === undefined) {
+      throw new Error('fixture not created');
+    }
+
     await expect(
-      db.delete(auditLogs).where(eq(auditLogs.action, 'test.append_only')),
+      db.delete(auditLogs).where(eq(auditLogs.id, entry.id)),
     ).rejects.toThrow();
   });
 });

@@ -38,8 +38,17 @@ docs/                   this file, features/<area>/<feature>.md
 - a back office page lives in `app/admin/`, but its URL has no `/admin`:
   `app/admin/etablissements/page.tsx` is `app.senami.fr/etablissements`;
 - links inside the back office never contain `/admin`;
-- the session cookie is set by the API on the back office host only: the
-  showcase site never sees it.
+- the session cookie lives on the back office host only: the showcase site
+  never sees it;
+- without the session cookie, the proxy sends every back office URL but
+  `/connexion` to `/connexion`. It is an optimistic check: the pages under
+  `app/admin/(authenticated)/` load the user (`getCurrentUser()`) and
+  redirect when the session is no longer valid;
+- typed routes are off (`next.config.ts`): the URL is not the file path.
+
+Route segments are the URL users read, so they are French
+(`connexion/`, `etablissements/`); route groups, absent from the URL, are
+code, so they are English (`(authenticated)/`).
 
 ### Shared, by technical kind
 
@@ -64,7 +73,8 @@ src/features/<feature>/
 ├── actions/      *.action.ts     Server Actions
 ├── api/          *.api.ts        calls to the API, through serverApi
 ├── schemas/      *.schema.ts     zod schemas of the forms
-└── hooks/        use-*.ts
+├── hooks/        use-*.ts
+└── utils/        *.ts            pure functions of the feature (messages, formats)
 ```
 
 Only the sub-folders the feature uses, always under these names. The screens
@@ -86,10 +96,23 @@ API spec it relies on, in `backend/docs/features/`.
 
 - **From the server**: `serverApi` (`@core/api/server-api`) in Server
   Components, Server Actions and route handlers. It forwards the
-  `senami_session` cookie and sends the back office `Origin`, which the API
-  checks on every cookie-authenticated write.
-- **Writes** go through Server Actions, which call `serverApi` and then
-  `revalidatePath()` or `redirect()`.
+  `senami_session` cookie, sends the back office `Origin`, which the API
+  checks on every cookie-authenticated write, and passes on the visitor's
+  `X-Forwarded-For` and `User-Agent`, which the API audits and throttles by.
+- **Writes** go through Server Actions, which call `serverApi`, then
+  `revalidatePath()` when the page shows what changed.
+- A Server Action returns a result (`{ ok: true, ... }` or
+  `{ ok: false, code }`), never a thrown `ApiError`: the component shows the
+  message of the code.
+- A Server Action of the back office never calls `redirect()`: Next.js
+  renders the target directly, without the proxy, so `app.senami.fr/` would
+  show the showcase site. The component navigates once the action has
+  answered; after signing in or out, with a full page load
+  (`goToBackOffice()`, `goToSignIn()` in `features/auth/utils/`).
+- Setting a cookie in a Server Action re-renders the current page: a page
+  that redirects when signed in must not see a session it should not yet
+  act on (the enrolment holds it in `senami_pending_session` until the
+  recovery codes are acknowledged).
 - **From the browser**, when a call cannot go through the server: `/api/...`
   on the same origin, rewritten to the API by `next.config.ts`. Never the API
   host directly.
@@ -143,18 +166,24 @@ id (`C-04`, `I-01`). This section is how the code applies it.
 
 Tailwind's default palette is removed: only the charter colours have classes.
 
-| Class prefix                              | Charter            | Use                                                                    |
-| ----------------------------------------- | ------------------ | ---------------------------------------------------------------------- |
-| `indigo-50` to `indigo-950`               | Indigo             | 900 is the brand indigo: titles, action button; 600: links (C-10)      |
-| `coral-50` to `coral-700`                 | Corail             | the accent, **one coral element per view** (C-05); 600 for text (C-03) |
-| `slate-50` to `slate-900`                 | Ardoise            | 50 to 300 surfaces and rules, 600 and darker for text (C-11)           |
-| `success`, `warning`, `error`, `info`     | États              | text and icon; `-surface` for the tinted background                    |
-| `primary`, `muted`, `border`, `ring`, ... | (shadcn/ui tokens) | what components use, mapped onto the scales above                      |
+| Class prefix                              | Charter            | Use                                                               |
+| ----------------------------------------- | ------------------ | ----------------------------------------------------------------- |
+| `indigo-50` to `indigo-950`               | Indigo             | 900 is the brand indigo: titles, action button; 600: links (C-10) |
+| `coral-50` to `coral-700`                 | Corail             | the accent, in small touches (below); 600 for text (C-03)         |
+| `slate-50` to `slate-900`                 | Ardoise            | 50 to 300 surfaces and rules, 600 and darker for text (C-11)      |
+| `success`, `warning`, `error`, `info`     | États              | text and icon; `-surface` for the tinted background               |
+| `primary`, `muted`, `border`, `ring`, ... | (shadcn/ui tokens) | what components use, mapped onto the scales above                 |
 
 - Never a raw colour (`#2e2a4d`, `bg-[...]`). Prefer the semantic tokens in
   components, the scales in layouts.
 - The action button is indigo, never coral (C-04). A state never relies on
   colour alone: icon and label (I-05).
+- Coral touches, validated with the back office mockup in place of the
+  charter's single coral element per view (C-05): overlines (coral 600),
+  discreet links (coral 600), the current step of a progress, the marker and
+  icon of the active menu item, the avatar, the first dashboard tile
+  (coral 100), one shape of the sign-in backdrop. Never a background behind
+  running text, never the action button.
 - Check a text and background pair against the contrast matrix of the
   charter; indigo 400 and 500, slate 400 and 500 and coral 500 never carry
   running text.
@@ -187,8 +216,13 @@ Tailwind's default palette is removed: only the charter colours have classes.
   `ghost` (closing a dialog). Sizes 44, 52, 56 px: `default`, `lg`, `xl`. A
   label is a verb and its object, never "OK" nor "Valider" (T-11), and no
   arrow.
-- Fields (I-03): `Label` above, hint below, the error in place of the hint;
-  `aria-invalid` on the field.
+- Fields (I-03), through `Field` (`shared/components/ui/field.tsx`): `Label`
+  above, hint below, the error in place of the hint; `fieldControlProps()`
+  links them (`aria-describedby`, `aria-invalid`). Filled as in the mockup
+  (indigo 50), ruled in indigo 600 on focus, in the error colour when
+  invalid.
+- `cn()` knows the charter type scale: `cn('text-label text-slate-700')`
+  keeps both, where plain tailwind-merge would drop the size.
 - Icons from `lucide-react`, outline at a 1.75 stroke (set globally),
   `currentColor`, 16 to 24 px, always with a visible or accessible label
   (S-06 to S-09).
@@ -215,8 +249,10 @@ matrix (4.5:1 for running text).
 - The back office is never indexed: `noindex` header from the proxy and
   `robots` metadata in its layout.
 - Never log, store in the browser or send to a third party a personal datum,
-  a password, a code or a token. Fonts are served by the app (`next/font`),
-  never from Google at runtime.
+  a password, a code or a token. `logging.serverFunctions` is off in
+  `next.config.ts`: in development, Next.js would print every Server Action
+  with its arguments. Fonts are served by the app (`app/fonts/`), never from
+  Google at runtime.
 - No accident sheet content in the web app: the back office shows registers
   and statistics, never a sheet.
 
@@ -272,17 +308,18 @@ apostrophes (`’`) in French text.
 
 ## Naming
 
-| Element             | Case                                  | Example                                   |
-| ------------------- | ------------------------------------- | ----------------------------------------- |
-| Component           | `PascalCase` function                 | `LoginForm`                               |
-| Component file      | `kebab-case.tsx`                      | `login-form.tsx`                          |
-| Hook                | `useCamelCase`, file `use-*.ts`       | `useSessionTimer`, `use-session-timer.ts` |
-| Server Action       | `camelCase` verb + `Action`           | `signInAction`, `sign-in.action.ts`       |
-| API call            | `camelCase` verb                      | `fetchSessions()`, `sessions.api.ts`      |
-| zod schema          | `camelCase` + `Schema`                | `loginSchema`, `login.schema.ts`          |
-| Route segment       | `kebab-case`, French, as users see it | `/etablissements`, `/mot-de-passe-oublie` |
-| Enum, member, value | as the backend                        | `UserRole.SUPER_ADMIN = 'super_admin'`    |
-| Unit / e2e test     | `*.spec.ts(x)` / `*.e2e-spec.ts`      | `api-client.spec.ts`                      |
+| Element             | Case                                   | Example                                   |
+| ------------------- | -------------------------------------- | ----------------------------------------- |
+| Component           | `PascalCase` function                  | `LoginForm`                               |
+| Component file      | `kebab-case.tsx`                       | `login-form.tsx`                          |
+| Hook                | `useCamelCase`, file `use-*.ts`        | `useSessionTimer`, `use-session-timer.ts` |
+| Server Action       | `camelCase` verb + `Action`            | `signInAction`, `sign-in.action.ts`       |
+| API call            | `camelCase` verb                       | `fetchSessions()`, `sessions.api.ts`      |
+| zod schema          | `camelCase` + `Schema`                 | `loginSchema`, `login.schema.ts`          |
+| Route segment       | `kebab-case`, French, as users see it  | `/etablissements`, `/mot-de-passe-oublie` |
+| Route group         | `kebab-case`, English (not in the URL) | `(authenticated)`                         |
+| Enum, member, value | as the backend                         | `UserRole.SUPER_ADMIN = 'super_admin'`    |
+| Unit / e2e test     | `*.spec.ts(x)` / `*.e2e-spec.ts`       | `api-client.spec.ts`                      |
 
 The rest of the TypeScript casing follows
 [`backend/docs/conventions.md`](../../backend/docs/conventions.md#typescript),

@@ -1,3 +1,4 @@
+import { type AuditAction } from '@shared/enums/audit-action.enum.js';
 import {
   bigint,
   index,
@@ -23,8 +24,7 @@ export const auditLogs = pgTable(
     // NULL for the system (webhook, scheduled job).
     actorRole: userRole(),
     establishmentId: uuid(),
-    // e.g. 'user.invited', 'session.revoked', 'totp.reset'
-    action: text().notNull(),
+    action: text().$type<AuditAction>().notNull(),
     targetType: text(),
     targetId: text(),
     details: jsonb().notNull().default({}),

@@ -46,8 +46,13 @@ const nextConfig: NextConfig = {
   // The build checks the application code only, as the backend does.
   typescript: { tsconfigPath: 'tsconfig.build.json' },
   poweredByHeader: false,
+  // Next.js logs each Server Action with its arguments in development:
+  // passwords, codes and tokens would land in the terminal.
+  logging: { serverFunctions: false },
   reactStrictMode: true,
-  typedRoutes: true,
+  // Off: in the back office the URL is not the file path (/connexion is
+  // served by app/admin/connexion), which typed routes cannot express.
+  typedRoutes: false,
   headers: () =>
     Promise.resolve([{ source: '/:path*', headers: securityHeaders }]),
   // The browser calls the API on the same origin: the session cookie stays

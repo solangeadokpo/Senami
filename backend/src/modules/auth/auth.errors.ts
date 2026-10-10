@@ -1,5 +1,6 @@
 import {
   AuthenticationError,
+  ConflictError,
   ForbiddenActionError,
   NotFoundError,
 } from '@shared/errors/domain.error.js';
@@ -108,5 +109,49 @@ export class UserNotFoundError extends NotFoundError {
   readonly code = 'USER_NOT_FOUND';
   constructor(userId: string) {
     super('User not found', { details: { userId } });
+  }
+}
+
+export class InvalidChallengeError extends AuthenticationError {
+  readonly code = 'INVALID_CHALLENGE';
+  constructor() {
+    super('Invalid or expired sign-in challenge');
+  }
+}
+
+export class InvalidTotpCodeError extends AuthenticationError {
+  readonly code = 'INVALID_TOTP_CODE';
+  constructor() {
+    super('Invalid code');
+  }
+}
+
+export class TotpLockedError extends ForbiddenActionError {
+  readonly code = 'TOTP_LOCKED';
+  constructor(lockedUntil: Date) {
+    super('Too many wrong codes, try again later', {
+      details: { lockedUntil: lockedUntil.toISOString() },
+    });
+  }
+}
+
+export class TotpAlreadyEnrolledError extends ConflictError {
+  readonly code = 'TOTP_ALREADY_ENROLLED';
+  constructor() {
+    super('Second factor already enrolled');
+  }
+}
+
+export class TotpNotEnrolledError extends ConflictError {
+  readonly code = 'TOTP_NOT_ENROLLED';
+  constructor() {
+    super('Second factor not enrolled');
+  }
+}
+
+export class TotpEnrolmentNotStartedError extends ConflictError {
+  readonly code = 'TOTP_ENROLMENT_NOT_STARTED';
+  constructor() {
+    super('Second factor enrolment not started');
   }
 }

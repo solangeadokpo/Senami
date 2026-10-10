@@ -30,13 +30,18 @@ pnpm start:dev
 | Variable                    | What to put                                              |
 | --------------------------- | -------------------------------------------------------- |
 | `JWT_SECRET`                | a random value of 32 characters or more (command below)  |
+| `TOTP_ENCRYPTION_KEY`       | 32 random bytes in base64 (command below)                |
 | `SEED_SUPER_ADMIN_EMAIL`    | the email of your local super administrator              |
 | `SEED_SUPER_ADMIN_PASSWORD` | its password, 12 characters or more                      |
 | `SEED_DEMO_PASSWORD`        | the password of the demo accounts, 12 characters or more |
 
 ```bash
-node -e "console.log(require('node:crypto').randomBytes(48).toString('base64url'))"
+node -e "console.log(require('node:crypto').randomBytes(48).toString('base64url'))" # JWT_SECRET
+node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"    # TOTP_ENCRYPTION_KEY
 ```
+
+`TOTP_ENCRYPTION_KEY` encrypts the second factor secrets: changing it makes
+every enrolled user unable to sign in on the back office until a reset.
 
 The API refuses to start, and the seeds to run, while a variable is missing
 or too short: the error names it. `.env` is never committed; each developer
@@ -59,9 +64,34 @@ at the repository root to start over).
 The responsable and the intervenant belong to the **École de démonstration
 Senami**, a demo establishment (`is_demo`) with an active yearly subscription,
 a sheet recipient and the SAMU, emergency and direction contacts: a
-declaration can be sent from it right away. The back office sign-in arrives
-with the second factor (F2); until then, the super administrator can only be
-used through the API tests.
+declaration can be sent from it right away.
+
+The back office asks for a second factor (TOTP). At the first sign-in of an
+account, scan the QR code drawn from `otpauthUrl` with an authenticator app
+(or type `secret` in it), confirm with a code, and keep the ten recovery
+codes. From the API:
+
+```bash
+# 1. password: returns step and challengeToken (valid 5 minutes)
+curl -X POST http://localhost:3000/api/v1/auth/backoffice/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"responsable@demo.senami.fr","password":"<SEED_DEMO_PASSWORD>"}'
+# 2a. step totp_enrolment: get the secret, then confirm with a code
+curl -X POST http://localhost:3000/api/v1/auth/backoffice/totp/enrolment \
+  -H 'Content-Type: application/json' -d '{"challengeToken":"<challengeToken>"}'
+curl -c cookies.txt -X POST http://localhost:3000/api/v1/auth/backoffice/totp/enrolment/confirm \
+  -H 'Content-Type: application/json' -d '{"challengeToken":"<challengeToken>","code":"<6 digits>"}'
+# 2b. step totp_verification: send the code
+curl -c cookies.txt -X POST http://localhost:3000/api/v1/auth/backoffice/totp/verify \
+  -H 'Content-Type: application/json' -d '{"challengeToken":"<challengeToken>","code":"<6 digits>"}'
+# 3. the senami_session cookie authenticates the next calls
+curl -b cookies.txt http://localhost:3000/api/v1/auth/me
+```
+
+A lost authenticator: sign in with a recovery code
+(`POST /auth/backoffice/totp/recovery`), or have the super administrator
+reset the second factor (`POST /users/:userId/totp/reset`). To start over
+locally, drop the database volume.
 
 Sign in on the mobile app from the API:
 

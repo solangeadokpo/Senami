@@ -1,3 +1,4 @@
+import type { TransactionScope } from '@shared/interfaces/unit-of-work.interface.js';
 import type { DevicePlatform } from '@shared/enums/device-platform.enum.js';
 import type { EstablishmentStatus } from '@shared/enums/establishment-status.enum.js';
 import type { SubscriptionStatus } from '@shared/enums/subscription-status.enum.js';
@@ -42,10 +43,10 @@ export interface NewSession {
   userId: string;
   channel: SessionChannel;
   refreshTokenHash: Buffer;
-  deviceId: string;
+  deviceId: string | null;
   deviceName: string | null;
   platform: DevicePlatform;
-  appVersion: string;
+  appVersion: string | null;
   createdAt: Date;
   expiresAt: Date;
 }
@@ -74,7 +75,10 @@ export interface AuthRepository {
   findSessionByPreviousRefreshHash(
     hash: Buffer,
   ): Promise<StoredSession | undefined>;
-  createSession(session: NewSession): Promise<StoredSession>;
+  createSession(
+    session: NewSession,
+    scope?: TransactionScope,
+  ): Promise<StoredSession>;
   /** Compare-and-swap on the current hash: false if it already changed. */
   rotateRefreshToken(rotation: {
     sessionId: string;
@@ -84,15 +88,20 @@ export interface AuthRepository {
     usedAt: Date;
   }): Promise<boolean>;
   revokeSession(sessionId: string, revocation: Revocation): Promise<void>;
-  /** Revokes the active sessions of a user, optionally of one mobile device. */
+  /** Revokes the active sessions of a user, optionally of one device or channel. */
   revokeUserSessions(
     userId: string,
     revocation: Revocation,
-    deviceId?: string,
+    filter?: { deviceId?: string; channel?: SessionChannel },
+    scope?: TransactionScope,
   ): Promise<number>;
   /** Not revoked and not expired, most recently used first. */
   listActiveSessions(userId: string, now: Date): Promise<StoredSession[]>;
-  recordLogin(userId: string, at: Date): Promise<void>;
+  recordLogin(
+    userId: string,
+    at: Date,
+    scope?: TransactionScope,
+  ): Promise<void>;
 }
 
 export const AUTH_REPOSITORY = Symbol('AUTH_REPOSITORY');

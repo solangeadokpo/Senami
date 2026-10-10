@@ -11,6 +11,11 @@ import {
 } from '@modules/auth/auth.errors.js';
 import type { Account } from '@modules/auth/repositories/auth.repository.js';
 import { FakeAuthRepository } from '@modules/auth/repositories/auth.repository.fake.js';
+import { AuditService } from '@modules/audit/services/audit.service.js';
+import { FakeAuditRepository } from '@modules/audit/repositories/audit.repository.fake.js';
+import { AuditAction } from '@shared/enums/audit-action.enum.js';
+import type { ClientDetails } from '@shared/interfaces/client-details.interface.js';
+import { FakeUnitOfWork } from '@shared/testing/fake-unit-of-work.js';
 import { SessionsService } from './sessions.service.js';
 import {
   ESTABLISHMENT_ID,
@@ -20,12 +25,23 @@ import {
 describe('SessionsService', () => {
   let clock: FakeClock;
   let repository: FakeAuthRepository;
+  let audit: FakeAuditRepository;
   let service: SessionsService;
+  const client: ClientDetails = {
+    ipAddress: '203.0.113.7',
+    userAgent: 'Vitest',
+  };
 
   beforeEach(() => {
     clock = new FakeClock();
     repository = new FakeAuthRepository();
-    service = new SessionsService(repository, clock);
+    audit = new FakeAuditRepository();
+    service = new SessionsService(
+      repository,
+      clock,
+      new AuditService(audit, clock),
+      new FakeUnitOfWork(),
+    );
   });
 
   function addAccount(overrides: Partial<Account> = {}): Account {
@@ -135,11 +151,28 @@ describe('SessionsService', () => {
       await addSession(colleague.userId);
       await addSession(colleague.userId);
 
-      await service.revokeAllOfUser(actor(responsable), colleague.userId);
+      await service.revokeAllOfUser(
+        actor(responsable),
+        colleague.userId,
+        client,
+      );
 
       expect(
         await repository.listActiveSessions(colleague.userId, clock.now()),
       ).toEqual([]);
+      expect(audit.rows).toEqual([
+        expect.objectContaining({
+          action: AuditAction.SESSIONS_REVOKED,
+          actorUserId: responsable.userId,
+          actorRole: UserRole.RESPONSABLE,
+          targetType: 'user',
+          targetId: colleague.userId,
+          establishmentId: ESTABLISHMENT_ID,
+          details: { revokedSessions: 2 },
+          ipAddress: client.ipAddress,
+          userAgent: client.userAgent,
+        }),
+      ]);
     });
 
     it('hides the users of another establishment from a responsable', async () => {
@@ -154,11 +187,12 @@ describe('SessionsService', () => {
       await addSession(stranger.userId);
 
       await expect(
-        service.revokeAllOfUser(actor(responsable), stranger.userId),
+        service.revokeAllOfUser(actor(responsable), stranger.userId, client),
       ).rejects.toBeInstanceOf(UserNotFoundError);
       expect(
         await repository.listActiveSessions(stranger.userId, clock.now()),
       ).toHaveLength(1);
+      expect(audit.rows).toEqual([]);
     });
 
     it('hides the super admin from a responsable', async () => {
@@ -170,7 +204,7 @@ describe('SessionsService', () => {
       });
 
       await expect(
-        service.revokeAllOfUser(actor(responsable), superAdmin.userId),
+        service.revokeAllOfUser(actor(responsable), superAdmin.userId, client),
       ).rejects.toBeInstanceOf(UserNotFoundError);
     });
 
@@ -178,7 +212,7 @@ describe('SessionsService', () => {
       const responsable = addAccount({ role: UserRole.RESPONSABLE });
 
       await expect(
-        service.revokeAllOfUser(actor(responsable), randomUUID()),
+        service.revokeAllOfUser(actor(responsable), randomUUID(), client),
       ).rejects.toBeInstanceOf(UserNotFoundError);
     });
 
@@ -197,7 +231,7 @@ describe('SessionsService', () => {
       });
       await addSession(target.userId);
 
-      await service.revokeAllOfUser(actor(superAdmin), target.userId);
+      await service.revokeAllOfUser(actor(superAdmin), target.userId, client);
 
       expect(
         await repository.listActiveSessions(target.userId, clock.now()),

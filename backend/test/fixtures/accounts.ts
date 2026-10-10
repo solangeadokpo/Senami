@@ -115,7 +115,7 @@ export async function suspendSubscription(
     .where(eq(subscriptions.establishmentId, establishmentId));
 }
 
-/** What the back office sign-in (F2) will issue: a hashed opaque cookie. */
+/** A back office session without going through the second factor. */
 export async function createBackofficeSession(
   db: Database,
   userId: string,

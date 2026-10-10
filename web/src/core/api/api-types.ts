@@ -10,4 +10,6 @@ export type ApiFieldError = ApiSchemas['FieldErrorDto'];
 export interface ApiResponse<T> {
   data: T;
   meta?: Record<string, unknown>;
+  /** The response headers, e.g. the session cookie set by the sign-in. */
+  headers: Headers;
 }

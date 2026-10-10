@@ -5,4 +5,10 @@ export {
 } from './database.constants.js';
 export { createDatabase } from './create-database.js';
 export { DatabaseModule } from './database.module.js';
+export {
+  DrizzleTransactionScope,
+  DrizzleUnitOfWork,
+  type Executor,
+  executorOf,
+} from './drizzle-unit-of-work.js';
 export { asSuperAdmin, withTenant } from './tenant.js';

@@ -125,7 +125,22 @@ the module root. Unit tests sit next to the file they test.
   super administrator and system jobs. Outside them, row level security makes
   the tables read as empty. The `establishmentId` comes from the authenticated
   user, never from the request.
-- Several writes that must succeed together go in one transaction.
+- Several writes that must succeed together go in one transaction. A
+  service opens it with the injected `UnitOfWork` (`UNIT_OF_WORK`) and passes
+  the `TransactionScope` it receives to each repository call; the repository
+  turns it back into the Drizzle transaction with `executorOf(db, scope)`.
+  Services never see Drizzle:
+
+  ```ts
+  await this.unitOfWork.run(async (scope) => {
+    await this.totp.reset(userId, scope);
+    await this.audit.record({ action: AuditAction.TOTP_RESET, ... }, scope);
+  });
+  ```
+
+- An administration action is recorded with `AuditService.record()` in the
+  same transaction as the change it records
+  ([spec](features/audit/audit-log.md)).
 - Select only the columns needed; load relations in one query, not one per
   row (N+1).
 - Business rules live in services, never in SQL views or stored functions:
@@ -309,8 +324,15 @@ revocation or a deactivation applies at once.
 ```ts
 @Public()                               // opt out: health, sign-in, public forms
 @Roles(UserRole.RESPONSABLE, UserRole.SUPER_ADMIN) // restrict; none = any role
+@Channels(SessionChannel.BACKOFFICE)    // restrict; none = mobile and back office
 handler(@CurrentUser() user: AuthenticatedUser) {}
 ```
+
+- Every back office route carries `@Channels(SessionChannel.BACKOFFICE)`, on
+  the controller or the handler. A responsable signs in on the mobile app with
+  a password only: without it, a mobile token would reach an administration
+  route without the second factor
+  ([spec](features/auth/backoffice-authentication.md)).
 
 - `user.establishmentId` is the tenant of the request: pass it to
   `withTenant()`. Never take an establishment id from the body or the query

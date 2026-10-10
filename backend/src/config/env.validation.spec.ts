@@ -8,10 +8,12 @@ import {
 
 const DATABASE_URL = 'postgres://user:pass@localhost:5432/db';
 const JWT_SECRET = 'a-test-secret-of-at-least-32-characters';
+const TOTP_ENCRYPTION_KEY = Buffer.alloc(32, 1).toString('base64');
+const REQUIRED = { DATABASE_URL, JWT_SECRET, TOTP_ENCRYPTION_KEY };
 
 describe('validateEnvironment', () => {
   it('applies the defaults when only the required variables are set', () => {
-    const env = validateEnvironment({ DATABASE_URL, JWT_SECRET });
+    const env = validateEnvironment(REQUIRED);
 
     expect(env.NODE_ENV).toBe(NodeEnv.DEVELOPMENT);
     expect(env.PORT).toBe(3000);
@@ -19,9 +21,7 @@ describe('validateEnvironment', () => {
   });
 
   it('converts a numeric string port', () => {
-    expect(
-      validateEnvironment({ DATABASE_URL, JWT_SECRET, PORT: '8080' }).PORT,
-    ).toBe(8080);
+    expect(validateEnvironment({ ...REQUIRED, PORT: '8080' }).PORT).toBe(8080);
   });
 
   it('rejects a missing DATABASE_URL, naming it', () => {
@@ -29,16 +29,15 @@ describe('validateEnvironment', () => {
   });
 
   it('rejects an out of range port', () => {
-    expect(() =>
-      validateEnvironment({ DATABASE_URL, JWT_SECRET, PORT: '70000' }),
-    ).toThrow(/PORT/);
+    expect(() => validateEnvironment({ ...REQUIRED, PORT: '70000' })).toThrow(
+      /PORT/,
+    );
   });
 
   it('rejects a non numeric API version', () => {
     expect(() =>
       validateEnvironment({
-        DATABASE_URL,
-        JWT_SECRET,
+        ...REQUIRED,
         API_DEFAULT_VERSION: 'v1',
       }),
     ).toThrow(/API_DEFAULT_VERSION/);
@@ -55,10 +54,32 @@ describe('validateEnvironment', () => {
   });
 
   it('applies the session defaults', () => {
-    const env = validateEnvironment({ DATABASE_URL, JWT_SECRET });
+    const env = validateEnvironment(REQUIRED);
 
     expect(env.ACCESS_TOKEN_TTL_MINUTES).toBe(15);
     expect(env.MOBILE_SESSION_DAYS).toBe(30);
+    expect(env.BACKOFFICE_SESSION_HOURS).toBe(12);
+  });
+
+  it('rejects a back office session longer than a day', () => {
+    expect(() =>
+      validateEnvironment({ ...REQUIRED, BACKOFFICE_SESSION_HOURS: '25' }),
+    ).toThrow(/BACKOFFICE_SESSION_HOURS/);
+  });
+
+  it('rejects a missing TOTP_ENCRYPTION_KEY', () => {
+    expect(() => validateEnvironment({ DATABASE_URL, JWT_SECRET })).toThrow(
+      /TOTP_ENCRYPTION_KEY/,
+    );
+  });
+
+  it('rejects a TOTP_ENCRYPTION_KEY that is not 32 bytes in base64', () => {
+    expect(() =>
+      validateEnvironment({
+        ...REQUIRED,
+        TOTP_ENCRYPTION_KEY: Buffer.alloc(16, 1).toString('base64'),
+      }),
+    ).toThrow(/TOTP_ENCRYPTION_KEY/);
   });
 });
 

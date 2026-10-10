@@ -1,4 +1,4 @@
-import { SessionChannel } from '@shared/enums/session-channel.enum.js';
+import { type SessionChannel } from '@shared/enums/session-channel.enum.js';
 import { randomUUID } from 'node:crypto';
 import type {
   Account,
@@ -129,15 +129,15 @@ export class FakeAuthRepository implements AuthRepository {
   revokeUserSessions(
     userId: string,
     revocation: Revocation,
-    deviceId?: string,
+    filter: { deviceId?: string; channel?: SessionChannel } = {},
   ) {
     const targets = [...this.sessions.values()].filter(
       (session) =>
         session.userId === userId &&
         session.revokedAt === null &&
-        (deviceId === undefined ||
-          (session.deviceId === deviceId &&
-            session.channel === SessionChannel.MOBILE)),
+        (filter.deviceId === undefined ||
+          session.deviceId === filter.deviceId) &&
+        (filter.channel === undefined || session.channel === filter.channel),
     );
     targets.forEach((session) => revoke(session, revocation));
     return Promise.resolve(targets.length);

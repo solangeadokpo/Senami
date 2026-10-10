@@ -75,6 +75,10 @@ line) breaks a contractual commitment to the client. Do not make it.
 | ------------ | ----------------------------------------------------------------------------- |
 | `audit_logs` | Administration actions (invitations, revocations, 2FA reset...). Append-only. |
 
+Written only by `AuditService` (`src/modules/audit/`), in the transaction of
+the recorded action. Today: `sessions_revoked`, `totp_enrolled`,
+`totp_locked`, `totp_reset`, `recovery_code_used`.
+
 ## What lives in the database, what lives in the code
 
 **Business rules live in the code**, where they are unit tested with the

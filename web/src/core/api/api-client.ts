@@ -61,7 +61,7 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
 
       // The casts below trust the API contract, typed from schema.d.ts.
       if (response.status === 204) {
-        return { data: undefined as T };
+        return { data: undefined as T, headers: response.headers };
       }
 
       const payload = await readJson(response);
@@ -72,6 +72,7 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
       return {
         data: payload['data'] as T,
         ...(isRecord(payload['meta']) ? { meta: payload['meta'] } : {}),
+        headers: response.headers,
       };
     },
   };

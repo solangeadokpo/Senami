@@ -1,4 +1,5 @@
 import { JwtService } from '@nestjs/jwt';
+import { AuthStep } from '@shared/enums/auth-step.enum.js';
 import { FakeClock, MINUTE_MS } from '@shared/testing/fake-clock.js';
 import {
   TEST_AUTH_CONFIG,
@@ -69,5 +70,62 @@ describe('TokenService', () => {
   it('hashes a token the same way every time', () => {
     expect(tokens.hashToken('abc').equals(tokens.hashToken('abc'))).toBe(true);
     expect(tokens.hashToken('abc')).toHaveLength(32);
+  });
+
+  describe('challenge token', () => {
+    it('carries the user for the expected step, five minutes', async () => {
+      const { token, expiresAt } = await tokens.createChallengeToken(
+        'u1',
+        AuthStep.TOTP_VERIFICATION,
+      );
+
+      expect(
+        await tokens.verifyChallengeToken(token, AuthStep.TOTP_VERIFICATION),
+      ).toBe('u1');
+      expect(expiresAt.getTime() - clock.now().getTime()).toBe(5 * MINUTE_MS);
+    });
+
+    it('is refused for another step', async () => {
+      const { token } = await tokens.createChallengeToken(
+        'u1',
+        AuthStep.TOTP_ENROLMENT,
+      );
+
+      expect(
+        await tokens.verifyChallengeToken(token, AuthStep.TOTP_VERIFICATION),
+      ).toBeUndefined();
+    });
+
+    it('is refused once expired', async () => {
+      const { token } = await tokens.createChallengeToken(
+        'u1',
+        AuthStep.TOTP_VERIFICATION,
+      );
+
+      clock.advance(6 * MINUTE_MS);
+
+      expect(
+        await tokens.verifyChallengeToken(token, AuthStep.TOTP_VERIFICATION),
+      ).toBeUndefined();
+    });
+
+    it('is not an access token, and an access token is not one', async () => {
+      const challenge = await tokens.createChallengeToken(
+        'u1',
+        AuthStep.TOTP_VERIFICATION,
+      );
+      const access = await tokens.createAccessToken({
+        userId: 'u1',
+        sessionId: 's1',
+      });
+
+      expect(await tokens.verifyAccessToken(challenge.token)).toBeUndefined();
+      expect(
+        await tokens.verifyChallengeToken(
+          access.token,
+          AuthStep.TOTP_VERIFICATION,
+        ),
+      ).toBeUndefined();
+    });
   });
 });

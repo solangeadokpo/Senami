@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AuditModule } from './audit/audit.module.js';
 import { AuthModule } from './auth/auth.module.js';
 
 /**
@@ -6,6 +7,6 @@ import { AuthModule } from './auth/auth.module.js';
  * outside its own folder.
  */
 @Module({
-  imports: [AuthModule],
+  imports: [AuditModule, AuthModule],
 })
 export class ModulesModule {}
