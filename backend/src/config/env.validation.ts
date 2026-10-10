@@ -1,8 +1,9 @@
 // Implicit conversion reads the decorator type metadata: load the polyfill
 // here, so a script validating the environment without Nest works too.
 import 'reflect-metadata';
-import { plainToInstance } from 'class-transformer';
+import { Transform, plainToInstance } from 'class-transformer';
 import {
+  IsBoolean,
   IsEmail,
   IsEnum,
   IsInt,
@@ -13,6 +14,7 @@ import {
   Max,
   Min,
   MinLength,
+  IsUrl,
   validateSync,
 } from 'class-validator';
 
@@ -108,6 +110,46 @@ export class EnvironmentVariables extends ScriptEnvironment {
     message: 'TOTP_ENCRYPTION_KEY must be 32 bytes encoded in base64',
   })
   TOTP_ENCRYPTION_KEY: string;
+
+  // Outgoing email, through any SMTP server: Mailpit locally, the provider's
+  // relay elsewhere.
+  @IsString()
+  @IsNotEmpty()
+  SMTP_HOST: string;
+
+  @IsInt()
+  @Min(1)
+  @Max(65535)
+  SMTP_PORT: number;
+
+  // true: TLS from the first byte (465); false: STARTTLS (587, 25, 1025).
+  // Read from the raw text: implicit conversion would turn "false" into true.
+  @Transform(({ obj }: { obj: Record<string, unknown> }) =>
+    obj['SMTP_SECURE'] === undefined
+      ? false
+      : obj['SMTP_SECURE'] === 'true' || obj['SMTP_SECURE'] === true,
+  )
+  @IsBoolean()
+  SMTP_SECURE: boolean = false;
+
+  @IsString()
+  @IsOptional()
+  SMTP_USER?: string;
+
+  @IsString()
+  @IsOptional()
+  SMTP_PASSWORD?: string;
+
+  @IsEmail({ require_tld: false })
+  MAIL_FROM_EMAIL: string;
+
+  @IsString()
+  @IsNotEmpty()
+  MAIL_FROM_NAME: string = 'Sènami';
+
+  // The back office, for the links written in the emails.
+  @IsUrl({ require_tld: false, require_protocol: true })
+  WEB_APP_URL: string;
 }
 
 /** `bootstrap` seed: the first super administrator. */

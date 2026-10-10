@@ -101,9 +101,14 @@ API spec it relies on, in `backend/docs/features/`.
   `X-Forwarded-For` and `User-Agent`, which the API audits and throttles by.
 - **Writes** go through Server Actions, which call `serverApi`, then
   `revalidatePath()` when the page shows what changed.
-- A Server Action returns a result (`{ ok: true, ... }` or
-  `{ ok: false, code }`), never a thrown `ApiError`: the component shows the
-  message of the code.
+- A Server Action returns an `ActionResult<T>` (`{ ok: true, ... }` or
+  `{ ok: false, code, fields? }`, `@core/api/action-result`), never a thrown
+  `ApiError`: `toActionFailure(error)` turns one into the other, and the
+  component shows the message of the code.
+- A message for the next page goes through `setFlash()`
+  (`@core/flash/set-flash`), read once by `FlashToast` in the layout. The
+  cookie holds data (a kind, a date, a count), never a personal datum: the
+  sentence is built on display (`describeFlash`).
 - A Server Action of the back office never calls `redirect()`: Next.js
   renders the target directly, without the proxy, so `app.senami.fr/` would
   show the showcase site. The component navigates once the action has
@@ -129,6 +134,18 @@ API spec it relies on, in `backend/docs/features/`.
 - A domain value from the API is compared to its enum
   (`user.role === UserRole.SUPER_ADMIN`), never to a string (ESLint rejects
   it). Enums mirror the backend ones, in `shared/enums/`.
+
+## Pages and roles
+
+- The `(authenticated)` layout checks the back office session. A page for
+  one role starts with `await requireRole(UserRole.SUPER_ADMIN)`
+  (`@features/auth/api/require-role`): another role gets a 404, which does
+  not disclose the page.
+- A page composes features; it holds no logic but reading its parameters
+  (`params` and `searchParams` are promises) and the role check.
+- A token given in a link travels after the `#` (`/invitation#<token>`):
+  read by the page, removed from the address bar at once, sent in a request
+  body only.
 
 ## Forms
 
@@ -226,7 +243,18 @@ Tailwind's default palette is removed: only the charter colours have classes.
 - Icons from `lucide-react`, outline at a 1.75 stroke (set globally),
   `currentColor`, 16 to 24 px, always with a visible or accessible label
   (S-06 to S-09).
+- A control outside `Field` (chips, OTP) puts its message in `FieldHelp`,
+  the same line with the same icon.
 - Dialogs for three cases only: confirming, a failure, abandoning (I-06).
+  Confirming is `ConfirmDialog`: title, consequence, an optional mandatory
+  reason, the verb on the button, and the failure shown inside it.
+- `Toast` for a short confirmation, one at a time: a new one hides the one
+  still showing (the flash of the layout included).
+- The sign-in pages share `AuthBackdrop` and `AuthCard`
+  (`shared/components/brand/`).
+- Dates and hours through `formatDate`, `formatDateTime`, `formatTime`
+  (`@shared/utils/`): French, the charter's "14 h 32", and always in
+  France's time (RG-05), whatever the device or the server.
 
 ### Wording
 

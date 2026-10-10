@@ -9,10 +9,7 @@ import {
   type SignInValues,
   signInSchema,
 } from '@features/auth/schemas/sign-in.schema';
-import {
-  type ActionResult,
-  toActionFailure,
-} from '@features/auth/utils/action-result';
+import { type ActionResult, toActionFailure } from '@core/api/action-result';
 import { AuthErrorCode } from '@features/auth/utils/auth-error-messages';
 import { AuthStep } from '@shared/enums/auth-step.enum';
 import { enumValue } from '@shared/utils/enum-value';

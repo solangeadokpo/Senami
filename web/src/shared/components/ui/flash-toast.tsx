@@ -1,12 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { describeAuthFlash } from '@features/auth/utils/flash-messages';
 import { Toast } from '@shared/components/ui/toast';
-import { FLASH_COOKIE, readFlash } from '@shared/utils/flash';
+import { FLASH_COOKIE, describeFlash, readFlash } from '@shared/utils/flash';
 
-/** Shows, once, the message left by a sign-in or sign-out action. */
-export function AuthFlash() {
+/** Shows, once, the message a Server Action left for this page. */
+export function FlashToast() {
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -17,7 +16,7 @@ export function AuthFlash() {
       const flash = readFlash(document.cookie);
       if (flash === null) return;
       document.cookie = `${FLASH_COOKIE}=; Max-Age=0; Path=/; SameSite=Lax`;
-      setMessage(describeAuthFlash(flash));
+      setMessage(describeFlash(flash));
     }, 100);
     return () => clearTimeout(timer);
   }, []);

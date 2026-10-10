@@ -2,13 +2,10 @@ import 'server-only';
 import { cookies } from 'next/headers';
 import { publicEnv } from '@config/public-env';
 import { SESSION_COOKIE } from '@core/api/session-cookie';
-import type { AuthFlash } from '@features/auth/utils/flash-messages';
 import { findSetCookie } from '@features/auth/utils/set-cookie';
-import { FLASH_COOKIE } from '@shared/utils/flash';
 import { isRecord } from '@shared/utils/is-record';
 
 const SECURE = new URL(publicEnv.appUrl).protocol === 'https:';
-const FLASH_SECONDS = 600;
 
 /**
  * After the enrolment, the session waits here until the recovery codes are
@@ -86,13 +83,4 @@ export async function activatePendingSession(): Promise<{
 
 export async function dropSessionCookie(): Promise<void> {
   (await cookies()).delete(SESSION_COOKIE);
-}
-
-export async function setAuthFlash(flash: AuthFlash): Promise<void> {
-  (await cookies()).set(FLASH_COOKIE, JSON.stringify(flash), {
-    sameSite: 'lax',
-    secure: SECURE,
-    path: '/',
-    maxAge: FLASH_SECONDS,
-  });
 }

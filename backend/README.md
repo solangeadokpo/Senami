@@ -43,6 +43,17 @@ node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"
 `TOTP_ENCRYPTION_KEY` encrypts the second factor secrets: changing it makes
 every enrolled user unable to sign in on the back office until a reset.
 
+Emails (invitations) leave through any SMTP server set by the `SMTP_*`,
+`MAIL_FROM_*` and `WEB_APP_URL` variables. Locally the defaults point at
+Mailpit, which catches every message and shows it on
+<http://localhost:8025>; with `pnpm start:dev`, start it beside PostgreSQL:
+
+```bash
+docker compose -f ../docker-compose.yml up -d --wait mailpit
+```
+
+The e2e suites replace the sender with an in-memory one: nothing is sent.
+
 The API refuses to start, and the seeds to run, while a variable is missing
 or too short: the error names it. `.env` is never committed; each developer
 chooses their own values.

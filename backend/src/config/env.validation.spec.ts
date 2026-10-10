@@ -9,7 +9,15 @@ import {
 const DATABASE_URL = 'postgres://user:pass@localhost:5432/db';
 const JWT_SECRET = 'a-test-secret-of-at-least-32-characters';
 const TOTP_ENCRYPTION_KEY = Buffer.alloc(32, 1).toString('base64');
-const REQUIRED = { DATABASE_URL, JWT_SECRET, TOTP_ENCRYPTION_KEY };
+const REQUIRED = {
+  DATABASE_URL,
+  JWT_SECRET,
+  TOTP_ENCRYPTION_KEY,
+  SMTP_HOST: 'localhost',
+  SMTP_PORT: '1025',
+  MAIL_FROM_EMAIL: 'no-reply@senami.local',
+  WEB_APP_URL: 'http://app.localhost:3001',
+};
 
 describe('validateEnvironment', () => {
   it('applies the defaults when only the required variables are set', () => {
@@ -65,6 +73,24 @@ describe('validateEnvironment', () => {
     expect(() =>
       validateEnvironment({ ...REQUIRED, BACKOFFICE_SESSION_HOURS: '25' }),
     ).toThrow(/BACKOFFICE_SESSION_HOURS/);
+  });
+
+  it('reads SMTP_SECURE as written, false by default', () => {
+    expect(validateEnvironment(REQUIRED).SMTP_SECURE).toBe(false);
+    expect(
+      validateEnvironment({ ...REQUIRED, SMTP_SECURE: 'false' }).SMTP_SECURE,
+    ).toBe(false);
+    expect(
+      validateEnvironment({ ...REQUIRED, SMTP_SECURE: 'true' }).SMTP_SECURE,
+    ).toBe(true);
+  });
+
+  it('requires the SMTP server and the sender', () => {
+    const { SMTP_HOST: _host, MAIL_FROM_EMAIL: _from, ...rest } = REQUIRED;
+
+    expect(() => validateEnvironment(rest)).toThrow(
+      /SMTP_HOST[\s\S]*MAIL_FROM_EMAIL|MAIL_FROM_EMAIL[\s\S]*SMTP_HOST/,
+    );
   });
 
   it('rejects a missing TOTP_ENCRYPTION_KEY', () => {

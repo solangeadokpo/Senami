@@ -10,6 +10,7 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 export interface RequestOptions {
   method?: HttpMethod;
+  /** JSON, or FormData for a file upload. */
   body?: unknown;
   signal?: AbortSignal;
 }
@@ -39,7 +40,10 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
         Accept: 'application/json',
         ...(await options.headers?.()),
       };
-      if (body !== undefined) headers['Content-Type'] = 'application/json';
+      const isForm = body instanceof FormData;
+      // FormData sets its own multipart boundary.
+      if (body !== undefined && !isForm)
+        headers['Content-Type'] = 'application/json';
 
       let response: Response;
       try {
@@ -47,7 +51,9 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
           method,
           headers,
           cache: 'no-store',
-          ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+          ...(body === undefined
+            ? {}
+            : { body: isForm ? body : JSON.stringify(body) }),
           ...(signal === undefined ? {} : { signal }),
         });
       } catch (cause) {

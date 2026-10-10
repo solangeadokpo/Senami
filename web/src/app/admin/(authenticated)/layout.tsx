@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { getCurrentUser } from '@features/auth/api/current-user.api';
-import { AuthFlash } from '@features/auth/components/auth-flash';
+import { FlashToast } from '@shared/components/ui/flash-toast';
 import { AppShell } from '@features/shell/components/app-shell';
 import { toUserRole } from '@features/shell/utils/shell-user';
 import { SessionChannel } from '@shared/enums/session-channel.enum';
@@ -30,7 +30,7 @@ export default async function AuthenticatedLayout({
       }}
     >
       {children}
-      <AuthFlash />
+      <FlashToast />
     </AppShell>
   );
 }
