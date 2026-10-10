@@ -129,16 +129,15 @@ package "Establishments and accounts" {
 package "Establishment space" {
 
   entity "sheet_recipients" as sheet_recipients {
-    * id : uuid <<PK>>
+    * establishment_id : uuid <<PK, FK>>
     --
-    * establishment_id : uuid <<FK>>
-    * recipient_type : recipient_type
-    * email : citext
-      label : text
+    * to_emails : citext[]
+    * cc_emails : citext[]
+    * bcc_emails : citext[]
     * created_at : timestamptz
     * updated_at : timestamptz
     ..
-    UK (establishment_id, email)
+    CHECK cardinality(to_emails) >= 1
   }
 
   entity "useful_contacts" as useful_contacts {
@@ -386,7 +385,6 @@ legend right
   user_role : intervenant | responsable | super_admin
   user_status : invited | active | deactivated
   session_channel : mobile | backoffice
-  recipient_type : to | cc | bcc
   contact_category : direction | emergency | samu | other
   submission_status : numbered | sent
   subscription_status : pending_payment | active | past_due | suspended | cancelled
@@ -407,7 +405,7 @@ users ||--o{ password_reset_tokens
 users ||--o{ auth_sessions
 users ||--o{ totp_recovery_codes
 
-establishments ||--o{ sheet_recipients
+establishments ||--o| sheet_recipients
 establishments ||--o{ useful_contacts
 establishments ||--o{ students
 establishments ||--o{ declaration_submissions

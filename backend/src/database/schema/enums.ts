@@ -4,7 +4,6 @@ import { DemoStatus } from '@shared/enums/demo-status.enum.js';
 import { EstablishmentStatus } from '@shared/enums/establishment-status.enum.js';
 import { EstablishmentType } from '@shared/enums/establishment-type.enum.js';
 import { PaymentStatus } from '@shared/enums/payment-status.enum.js';
-import { RecipientType } from '@shared/enums/recipient-type.enum.js';
 import { ReferenceList } from '@shared/enums/reference-list.enum.js';
 import { RegistrationStatus } from '@shared/enums/registration-status.enum.js';
 import { SessionChannel } from '@shared/enums/session-channel.enum.js';
@@ -36,6 +35,5 @@ export const registrationStatus = pgEnum(
 );
 export const demoStatus = pgEnum('demo_status', DemoStatus);
 export const contactCategory = pgEnum('contact_category', ContactCategory);
-export const recipientType = pgEnum('recipient_type', RecipientType);
 export const submissionStatus = pgEnum('submission_status', SubmissionStatus);
 export const referenceList = pgEnum('reference_list', ReferenceList);

@@ -22,6 +22,7 @@ import {
   cleanLogo,
 } from '@modules/establishments/utils/logo-file.js';
 import { InvitationsService } from '@modules/invitations/services/invitations.service.js';
+import { SheetRecipientsService } from '@modules/sheet-recipients/services/sheet-recipients.service.js';
 import { PaginatedResult } from '@shared/dto/paginated-result.js';
 import { AuditAction } from '@shared/enums/audit-action.enum.js';
 import { BillingInterval } from '@shared/enums/billing-interval.enum.js';
@@ -61,6 +62,7 @@ export class EstablishmentsService {
     @Inject(ESTABLISHMENTS_REPOSITORY)
     private readonly repository: EstablishmentsRepository,
     private readonly invitations: InvitationsService,
+    private readonly sheetRecipients: SheetRecipientsService,
     private readonly audit: AuditService,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(UNIT_OF_WORK) private readonly unitOfWork: UnitOfWork,
@@ -81,7 +83,10 @@ export class EstablishmentsService {
     return this.repository.cities();
   }
 
-  /** SA-02: the establishment, its subscription, its invited responsable. */
+  /**
+   * SA-02: the establishment, its subscription, its invited responsable, who
+   * is also the main recipient of the sheets (ETB-03).
+   */
   async create(
     actor: AuthenticatedUser,
     input: CreateInput,
@@ -110,6 +115,11 @@ export class EstablishmentsService {
           },
           createdBy: actor.userId,
         },
+        scope,
+      );
+      await this.sheetRecipients.initialise(
+        created.establishmentId,
+        input.responsable.email,
         scope,
       );
       const issued = await this.invitations.issue(

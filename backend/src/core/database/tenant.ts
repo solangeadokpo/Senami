@@ -13,12 +13,23 @@ export function withTenant<T>(
   work: (tx: Transaction) => Promise<T>,
 ): Promise<T> {
   return db.transaction(async (tx) => {
-    // set_config(..., true) is SET LOCAL, with a bind parameter.
-    await tx.execute(
-      sql`SELECT set_config('app.establishment_id', ${establishmentId}, true)`,
-    );
+    await enterTenant(tx, establishmentId);
     return work(tx);
   });
+}
+
+/**
+ * Scopes a transaction already running (a UnitOfWork's) to one
+ * establishment, until it ends: withTenant() would open another one.
+ */
+export async function enterTenant(
+  tx: Transaction,
+  establishmentId: string,
+): Promise<void> {
+  // set_config(..., true) is SET LOCAL, with a bind parameter.
+  await tx.execute(
+    sql`SELECT set_config('app.establishment_id', ${establishmentId}, true)`,
+  );
 }
 
 /** Cross-establishment access: super administrator and system jobs only. */

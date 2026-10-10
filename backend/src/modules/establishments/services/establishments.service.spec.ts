@@ -15,6 +15,8 @@ import {
 import { FakeEstablishmentsRepository } from '@modules/establishments/repositories/establishments.repository.fake.js';
 import { FakeInvitationsRepository } from '@modules/invitations/repositories/invitations.repository.fake.js';
 import { InvitationsService } from '@modules/invitations/services/invitations.service.js';
+import { FakeSheetRecipientsRepository } from '@modules/sheet-recipients/repositories/sheet-recipients.repository.fake.js';
+import { SheetRecipientsService } from '@modules/sheet-recipients/services/sheet-recipients.service.js';
 import { AuditAction } from '@shared/enums/audit-action.enum.js';
 import { EstablishmentStatus } from '@shared/enums/establishment-status.enum.js';
 import { EstablishmentType } from '@shared/enums/establishment-type.enum.js';
@@ -58,6 +60,7 @@ describe('EstablishmentsService', () => {
   let email: FakeEmailSender;
   let audit: FakeAuditRepository;
   let unitOfWork: FakeUnitOfWork;
+  let recipients: FakeSheetRecipientsRepository;
   let service: EstablishmentsService;
 
   beforeEach(() => {
@@ -66,6 +69,7 @@ describe('EstablishmentsService', () => {
     email = new FakeEmailSender();
     audit = new FakeAuditRepository();
     unitOfWork = new FakeUnitOfWork();
+    recipients = new FakeSheetRecipientsRepository();
     const auditService = new AuditService(audit, clock);
     service = new EstablishmentsService(
       repository,
@@ -78,6 +82,7 @@ describe('EstablishmentsService', () => {
         clock,
         unitOfWork,
       ),
+      new SheetRecipientsService(recipients, auditService, clock, unitOfWork),
       auditService,
       clock,
       unitOfWork,
@@ -118,6 +123,17 @@ describe('EstablishmentsService', () => {
       expect(invitation).toEqual({
         sent: true,
         expiresAt: new Date('2026-10-09T08:00:00.000Z'),
+      });
+      expect(unitOfWork.runs).toBe(1);
+    });
+
+    it('makes the responsable the main recipient of the sheets', async () => {
+      const { establishment } = await service.create(superAdmin, INPUT, client);
+
+      expect(recipients.rows.get(establishment.id)).toMatchObject({
+        to: ['l.martin@ecole.fr'],
+        cc: [],
+        bcc: [],
       });
       expect(unitOfWork.runs).toBe(1);
     });

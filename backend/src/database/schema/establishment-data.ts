@@ -1,33 +1,47 @@
 import { sql } from 'drizzle-orm';
 import {
+  check,
   index,
   pgTable,
   smallint,
   text,
-  unique,
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
 import { citext, createdAt, id, timestamptz, updatedAt } from './columns.js';
-import { contactCategory, recipientType } from './enums.js';
+import { contactCategory } from './enums.js';
 import { establishments } from './establishments.js';
 import { tenantIsolation } from './policies.js';
 
-/** ETB-03: who receives the sheet. At least one `to` is needed to declare. */
+/**
+ * ETB-03: who receives the sheet, one row per establishment. The main
+ * recipients are required; the service checks the emails and the duplicates.
+ */
 export const sheetRecipients = pgTable(
   'sheet_recipients',
   {
-    id: id(),
     establishmentId: uuid()
-      .notNull()
+      .primaryKey()
       .references(() => establishments.id, { onDelete: 'cascade' }),
-    recipientType: recipientType().notNull(),
-    email: citext().notNull(),
-    label: text(),
+    toEmails: citext().array().notNull(),
+    ccEmails: citext()
+      .array()
+      .notNull()
+      .default(sql`'{}'`),
+    bccEmails: citext()
+      .array()
+      .notNull()
+      .default(sql`'{}'`),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (t) => [tenantIsolation(), unique().on(t.establishmentId, t.email)],
+  (t) => [
+    tenantIsolation(),
+    check(
+      'sheet_recipients_to_emails_ck',
+      sql`cardinality(${t.toEmails}) >= 1`,
+    ),
+  ],
 );
 
 /** ETB-06, MOB-12: shown in the mobile app, offline included. */

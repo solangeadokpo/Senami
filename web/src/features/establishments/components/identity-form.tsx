@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Building2, Mail, MapPin, Phone } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useTransition } from 'react';
+import { type ReactNode, useEffect, useState, useTransition } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { updateIdentityAction } from '@features/establishments/actions/establishment.actions';
 import type { EstablishmentDetail } from '@features/establishments/api/establishments.api';
@@ -20,8 +20,17 @@ import { Field, fieldControlProps } from '@shared/components/ui/field';
 import { Input } from '@shared/components/ui/input';
 import { Toast } from '@shared/components/ui/toast';
 
-/** ETB-03: what the responsable keeps up to date; the sheet prints it. */
-export function IdentityForm({ detail }: { detail: EstablishmentDetail }) {
+/**
+ * ETB-03: what the responsable keeps up to date; the sheet prints it.
+ * `children` goes under the form: the recipients.
+ */
+export function IdentityForm({
+  detail,
+  children,
+}: {
+  detail: EstablishmentDetail;
+  children?: ReactNode;
+}) {
   const router = useRouter();
   const savedLogoUrl = detail.hasLogo
     ? `/api/v1/establishments/${detail.id}/logo?v=${Date.parse(detail.createdAt)}`
@@ -216,14 +225,7 @@ export function IdentityForm({ detail }: { detail: EstablishmentDetail }) {
               </Button>
             </div>
           </form>
-          <section className="grid gap-4 rounded-3xl border bg-white p-6">
-            <h2 className="text-[1.0625rem] font-bold text-indigo-900">
-              Destinataires des fiches
-            </h2>
-            <Alert tone="info" title="Arrive avec la gestion des destinataires">
-              Le destinataire principal et les copies se régleront ici.
-            </Alert>
-          </section>
+          {children}
         </div>
         <aside className="grid gap-4 rounded-3xl border bg-white p-6 xl:sticky xl:top-6">
           <h2 className="text-[1.0625rem] font-bold text-indigo-900">

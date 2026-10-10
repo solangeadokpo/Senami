@@ -11,4 +11,4 @@ export {
   type Executor,
   executorOf,
 } from './drizzle-unit-of-work.js';
-export { asSuperAdmin, withTenant } from './tenant.js';
+export { asSuperAdmin, enterTenant, withTenant } from './tenant.js';

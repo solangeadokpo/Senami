@@ -25,7 +25,6 @@ import {
 import { YEARLY_PLAN_CODE } from '@database/seeds/seeders/subscription-plan.seeder.js';
 import { PasswordHasherService } from '@modules/auth/services/password-hasher.service.js';
 import { DevicePlatform } from '@shared/enums/device-platform.enum.js';
-import { RecipientType } from '@shared/enums/recipient-type.enum.js';
 import { SubscriptionStatus } from '@shared/enums/subscription-status.enum.js';
 import { UserRole } from '@shared/enums/user-role.enum.js';
 import { createTestApp } from './app.js';
@@ -91,7 +90,7 @@ describe('seeders', () => {
       );
     const tenantRows = await asSuperAdmin(db, async (tx) => ({
       recipients: await tx
-        .select({ type: sheetRecipients.recipientType })
+        .select({ to: sheetRecipients.toEmails })
         .from(sheetRecipients)
         .where(eq(sheetRecipients.establishmentId, DEMO_ESTABLISHMENT_ID)),
       contacts: await tx
@@ -134,7 +133,7 @@ describe('seeders', () => {
       plans: 1,
       demoUsers: 2,
       currentSubscriptions: 1,
-      recipients: [{ type: RecipientType.TO }],
+      recipients: [{ to: [DEMO_RESPONSABLE_EMAIL] }],
     });
     expect((await snapshot()).contacts.map((c) => c.label).sort()).toEqual([
       'Direction',
