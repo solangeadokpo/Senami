@@ -12,6 +12,8 @@ export type ActionResult<T> =
       fields?: ApiFieldError[];
       /** TOTP_LOCKED only: when the lock ends, ISO 8601. */
       lockedUntil?: string;
+      /** The parameters of the error, to point at what it concerns. */
+      details?: Record<string, unknown>;
     };
 
 export type ActionFailure = Extract<ActionResult<never>, { ok: false }>;
@@ -26,5 +28,6 @@ export function toActionFailure(error: unknown): ActionFailure {
     code: error.code,
     ...(error.fields.length > 0 ? { fields: error.fields } : {}),
     ...(typeof lockedUntil === 'string' ? { lockedUntil } : {}),
+    ...(error.details === undefined ? {} : { details: error.details }),
   };
 }

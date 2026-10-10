@@ -260,6 +260,22 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/sheet-recipients': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['SheetRecipientsController_find_v1'];
+    put: operations['SheetRecipientsController_replace_v1'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/establishments': {
     parameters: {
       query?: never;
@@ -545,6 +561,32 @@ export interface components {
     ResentInvitationResponseDto: {
       /** Format: date-time */
       expiresAt: string;
+    };
+    SheetRecipientsResponseDto: {
+      to: string[];
+      cc: string[];
+      bcc: string[];
+      /**
+       * Format: date-time
+       * @description null: no recipient saved yet
+       */
+      updatedAt: string | null;
+    };
+    UpdateSheetRecipientsDto: {
+      /**
+       * @example [
+       *       "direction@ecole.fr"
+       *     ]
+       */
+      to: string[];
+      /**
+       * @example [
+       *       "infirmerie@ecole.fr"
+       *     ]
+       */
+      cc: string[];
+      /** @example [] */
+      bcc: string[];
     };
     EstablishmentResponsableDto: {
       /** Format: uuid */
@@ -1527,6 +1569,100 @@ export interface operations {
         };
       };
       503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+    };
+  };
+  SheetRecipientsController_find_v1: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: components['schemas']['SheetRecipientsResponseDto'];
+          };
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+    };
+  };
+  SheetRecipientsController_replace_v1: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateSheetRecipientsDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: components['schemas']['SheetRecipientsResponseDto'];
+          };
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponseDto'];
+        };
+      };
+      422: {
         headers: {
           [name: string]: unknown;
         };
